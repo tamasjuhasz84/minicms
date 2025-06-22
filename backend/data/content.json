@@ -1,0 +1,65 @@
+{
+  "header": {
+    "title": "Ez itt egy fejléc",
+    "image": "/header.jpg"
+  },
+  "footer": {
+    "text": "Ez itt egy lábléc"
+  },
+  "form": [
+    {
+      "label": "Beküldhető",
+      "name": "active",
+      "type": "switch",
+      "placeholder": "",
+      "enabled": true,
+      "multiplier": "",
+      "source": "",
+      "sourceField": ""
+    },
+    {
+      "label": "API Szelect",
+      "name": "apiSelect",
+      "type": "select",
+      "placeholder": "válasszon",
+      "enabled": true,
+      "multiplier": "",
+      "source": "/options",
+      "sourceField": ""
+    },
+    {
+      "label": "cms Select",
+      "name": "csmSelect",
+      "type": "select",
+      "placeholder": "válasszon",
+      "enabled": true,
+      "multiplier": "",
+      "options": {
+        "type": [
+          {
+            "value": "basic",
+            "text": "Alap csomag"
+          },
+          {
+            "value": "premium",
+            "text": "Prémium csomag"
+          },
+          {
+            "value": "enterprise",
+            "text": "Vállalati csomag"
+          }
+        ]
+      }
+    },
+    {
+      "label": "Szám",
+      "name": "szam",
+      "type": "number",
+      "placeholder": "szam",
+      "enabled": true,
+      "multiplier": "45",
+      "source": "",
+      "sourceField": ""
+    }
+  ]
+}
