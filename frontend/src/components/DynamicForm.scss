@@ -1,32 +1,53 @@
 .dynamic-form {
-  .header-card {
-    text-align: center;
+  font-family: var(--form-font-family);
 
-    h2 {
-      margin-bottom: 0.5rem;
-    }
-
-    .v-img {
-      border-radius: 8px;
-      margin-bottom: 1rem;
-    }
+  .header-card h2 {
+    font-size: var(--form-heading-font, 1.5rem);
+    font-family: inherit;
+    color: #000 !important; // ez biztosítja, hogy mindig látszik
   }
 
   .form-field {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
+
+    .v-field,
+    .v-field__input,
+    .v-select__selection-text {
+      background-color: var(--form-bg) !important;
+    }
+
+    .v-field__input,
+    .v-select__selection-text {
+      font-size: var(--form-input-font) !important;
+    }
+
+    .v-label.v-field-label {
+      font-size: var(--form-label-font) !important;
+    }
+
+    .v-switch .v-label {
+      font-size: var(--form-label-font) !important;
+    }
+
+    .v-overlay__content {
+      font-size: var(--form-input-font);
+    }
   }
 
-  .login-box {
-    margin-bottom: 2rem;
+  .v-btn {
+    background-color: var(--form-color) !important;
+    color: #fff !important;
+    font-size: var(--form-button-font) !important;
+    transition: background-color 0.2s ease, filter 0.2s ease;
+  }
 
-    h2 {
-      margin-bottom: 1rem;
-    }
+  .v-btn:hover {
+    filter: brightness(110%);
   }
 
   footer {
     margin-top: 3rem;
     font-size: 0.8rem;
-    color: #666;
+    color: var(--form-footer-color, #333);
   }
 }

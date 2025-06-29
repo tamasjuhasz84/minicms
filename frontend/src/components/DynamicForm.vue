@@ -10,13 +10,20 @@ const props = defineProps({
   },
 })
 
+const formRef = ref(null)
 const formData = ref({})
 const selectOptions = ref({})
 const header = ref({})
 const footer = ref({})
+const styles = ref({
+  color: '#1976d2',
+  fontSize: '16px',
+  buttonLabel: 'Küldés',
+})
 const showLogin = ref(false)
 const authenticated = ref(false)
 const loginForm = ref({ username: '', password: '' })
+const errorMessages = ref([])
 
 const enabledFields = computed(() => {
   return Array.isArray(props.formFields)
@@ -37,6 +44,11 @@ onMounted(() => {
   axios.get('/content').then((res) => {
     header.value = res.data.header || {}
     footer.value = res.data.footer || {}
+    const incoming = res.data.styles || styles.value
+    styles.value = {
+      ...incoming,
+      inputBackground: incoming.color || '#ffffff',
+    }
   })
 })
 
@@ -86,9 +98,19 @@ function getSelectItems(field) {
   return Array.isArray(data) ? data : []
 }
 
-function submitForm() {
+async function submitForm() {
+  errorMessages.value = []
+
+  const result = await formRef.value?.validate()
+  if (!result?.valid) {
+    errorMessages.value.push('Kérjük, töltsd ki a kötelező mezőket.')
+    return
+  }
+
   if (!formData.value.active) {
-    alert('A beküldés csak akkor engedélyezett, ha a "Beküldhető" mező be van kapcsolva.')
+    errorMessages.value.push(
+      'A beküldés csak akkor engedélyezett, ha a "Beküldhető" mező be van kapcsolva.',
+    )
     return
   }
 
@@ -121,7 +143,18 @@ function logout() {
 </script>
 
 <template>
-  <v-app class="dynamic-form">
+  <v-app
+    class="dynamic-form"
+    :style="{
+      '--form-color': styles.color,
+      '--form-bg': styles.backgroundColor,
+      '--form-label-font': styles.labelFontSize,
+      '--form-input-font': styles.inputFontSize,
+      '--form-button-font': styles.buttonFontSize,
+      '--form-font-family': styles.fontFamily,
+      '--form-footer-color': '#000',
+    }"
+  >
     <v-main>
       <v-container>
         <!-- Admin bejelentkezés -->
@@ -150,13 +183,19 @@ function logout() {
           </v-card>
 
           <!-- Dinamikus űrlap -->
-          <v-form>
-            <div v-for="(field, index) in enabledFields" :key="index" class="form-field">
+          <v-form ref="formRef">
+            <div
+              v-for="(field, index) in enabledFields"
+              :key="index"
+              class="form-field"
+              :style="{ fontSize: styles.fontSize }"
+            >
               <v-text-field
                 v-if="field.type === 'text'"
                 :label="field.label"
                 v-model="formData[field.name]"
                 :placeholder="field.placeholder || ''"
+                :rules="field.required ? [(v) => !!v || 'Kötelező mező'] : []"
               />
               <v-text-field
                 v-else-if="field.type === 'number'"
@@ -164,6 +203,7 @@ function logout() {
                 :label="field.label"
                 v-model.number="formData[field.name]"
                 :placeholder="field.placeholder || ''"
+                :rules="field.required ? [(v) => (v !== null && v !== '') || 'Kötelező mező'] : []"
               />
               <v-select
                 v-else-if="field.type === 'select'"
@@ -173,6 +213,7 @@ function logout() {
                 item-value="value"
                 v-model="formData[field.name]"
                 :placeholder="field.placeholder || ''"
+                :rules="field.required ? [(v) => !!v || 'Kötelező mező'] : []"
               />
               <v-row v-else-if="field.type === 'switch'" class="my-2">
                 <v-col cols="12">
@@ -186,7 +227,17 @@ function logout() {
               </v-row>
             </div>
 
-            <v-btn color="primary" @click="submitForm">Küldés</v-btn>
+            <v-btn :color="styles.color" @click="submitForm">{{ styles.buttonLabel }}</v-btn>
+
+            <v-alert
+              v-if="errorMessages.length"
+              type="error"
+              class="mt-4"
+              border="start"
+              variant="tonal"
+            >
+              <div v-for="(msg, i) in errorMessages" :key="i">{{ msg }}</div>
+            </v-alert>
           </v-form>
 
           <!-- Lábléc -->

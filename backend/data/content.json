@@ -13,6 +13,14 @@
       "type": "select",
       "placeholder": "válasszon",
       "enabled": true,
+      "required": true,
+      "group": "",
+      "validations": {
+        "min": null,
+        "max": null,
+        "pattern": "",
+        "maxFileSize": null
+      },
       "source": "/options",
       "sourceField": ""
     },
@@ -22,6 +30,14 @@
       "type": "number",
       "placeholder": "szam",
       "enabled": true,
+      "required": false,
+      "group": "",
+      "validations": {
+        "min": null,
+        "max": null,
+        "pattern": "",
+        "maxFileSize": null
+      },
       "source": "",
       "sourceField": ""
     },
@@ -31,6 +47,14 @@
       "type": "text",
       "placeholder": "szoveg",
       "enabled": true,
+      "required": false,
+      "group": "",
+      "validations": {
+        "min": null,
+        "max": null,
+        "pattern": "",
+        "maxFileSize": null
+      },
       "source": "",
       "sourceField": ""
     },
@@ -40,6 +64,14 @@
       "type": "select",
       "placeholder": "válasszon",
       "enabled": true,
+      "required": false,
+      "group": "",
+      "validations": {
+        "min": null,
+        "max": null,
+        "pattern": "",
+        "maxFileSize": null
+      },
       "options": {
         "type": [
           {
@@ -63,8 +95,27 @@
       "type": "switch",
       "placeholder": "",
       "enabled": true,
+      "required": false,
+      "group": "",
+      "validations": {
+        "min": null,
+        "max": null,
+        "pattern": "",
+        "maxFileSize": null
+      },
       "source": "",
       "sourceField": ""
     }
-  ]
+  ],
+  "styles": {
+    "color": "#1951D2",
+    "fontSize": "15px",
+    "buttonLabel": "Beküldés",
+    "labelFontSize": "15px",
+    "inputBackground": "yellow",
+    "inputFontSize": "15px",
+    "buttonFontSize": "15px",
+    "fontFamily": "Arial",
+    "backgroundColor": "#8D921B"
+  }
 }

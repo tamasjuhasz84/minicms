@@ -17,6 +17,15 @@ const editableContent = ref({
   header: { title: '', image: '' },
   footer: { text: '' },
   form: [],
+  styles: {
+    color: '#1976d2',
+    backgroundColor: '#f5f5f5',
+    buttonFontSize: '16px',
+    inputFontSize: '14px',
+    labelFontSize: '13px',
+    fontFamily: 'Roboto, sans-serif',
+    buttonLabel: 'Küldés',
+  },
 })
 
 function addField() {
@@ -26,6 +35,14 @@ function addField() {
     type: 'text',
     placeholder: '',
     enabled: true,
+    required: false,
+    group: '',
+    validations: {
+      min: null,
+      max: null,
+      pattern: '',
+      maxFileSize: null,
+    },
     sourceType: 'cms',
     optionsText: '',
     optionsKey: '',
@@ -75,6 +92,7 @@ function saveContent() {
     header: editableContent.value.header,
     footer: editableContent.value.footer,
     form,
+    styles: editableContent.value.styles,
   }
 
   axios
@@ -96,6 +114,7 @@ onMounted(() => {
         name: 'active',
         type: 'switch',
         enabled: true,
+        required: false,
       })
     }
 
@@ -106,6 +125,14 @@ onMounted(() => {
         type: f.type || 'text',
         placeholder: f.placeholder || '',
         enabled: typeof f.enabled === 'undefined' ? true : f.enabled,
+        required: f.required || false,
+        group: f.group || '',
+        validations: f.validations || {
+          min: null,
+          max: null,
+          pattern: '',
+          maxFileSize: null,
+        },
         optionsText: '',
         optionsKey: f.optionsKey || '',
         sourceType: '',
@@ -135,6 +162,15 @@ onMounted(() => {
       header: content.header || { title: '', image: '' },
       footer: content.footer || { text: '' },
       form: content.form,
+      styles: content.styles || {
+        color: '#1976d2',
+        backgroundColor: '#f5f5f5',
+        buttonFontSize: '16px',
+        inputFontSize: '14px',
+        labelFontSize: '13px',
+        fontFamily: 'Roboto, sans-serif',
+        buttonLabel: 'Küldés',
+      },
     }
   }
 })
@@ -148,7 +184,6 @@ onMounted(() => {
     </v-tabs>
 
     <v-window v-model="tab">
-      <!-- TAB 0: Tartalomszerkesztés -->
       <v-window-item :value="0">
         <v-form @submit.prevent="saveContent">
           <v-card class="pa-4 mb-6">
@@ -160,6 +195,51 @@ onMounted(() => {
           <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-2">Lábléc</h3>
             <v-text-field label="Szöveg" v-model="editableContent.footer.text" />
+          </v-card>
+
+          <v-card class="pa-4 mb-6">
+            <h3 class="text-subtitle-1 mb-2">Stílusok</h3>
+            <v-text-field
+              label="Label méret (pl. 13px)"
+              v-model="editableContent.styles.labelFontSize"
+            />
+            <v-text-field
+              label="Tartalom méret (pl. 14px)"
+              v-model="editableContent.styles.inputFontSize"
+            />
+            <v-text-field
+              label="Betűtípus (pl. Roboto, Arial)"
+              v-model="editableContent.styles.fontFamily"
+            />
+            <div class="mb-2">
+              <div class="text-caption font-weight-medium mb-1">Mező háttérszíne</div>
+              <v-color-picker
+                v-model="editableContent.styles.backgroundColor"
+                flat
+                hide-inputs
+                hide-canvas
+                mode="rgb"
+                :modes="['rgb']"
+                class="compact-color"
+              />
+            </div>
+            <v-text-field
+              label="Gomb szövegméret (pl. 16px)"
+              v-model="editableContent.styles.buttonFontSize"
+            />
+            <v-text-field label="Gomb felirat" v-model="editableContent.styles.buttonLabel" />
+            <div class="mb-2">
+              <div class="text-caption font-weight-medium mb-1">Gomb színe</div>
+              <v-color-picker
+                v-model="editableContent.styles.color"
+                flat
+                hide-inputs
+                hide-canvas
+                mode="rgb"
+                :modes="['rgb']"
+                class="compact-color"
+              />
+            </div>
           </v-card>
 
           <v-card class="pa-4 mb-6">
@@ -188,14 +268,42 @@ onMounted(() => {
 
                   <v-text-field label="Címke" v-model="field.label" class="mb-2" />
                   <v-select
+                    :items="['text', 'number', 'select', 'switch', 'file']"
                     label="Típus"
-                    :items="['text', 'number', 'select', 'switch']"
                     v-model="field.type"
                     class="mb-2"
                   />
                   <v-text-field label="Név" v-model="field.name" class="mb-2" />
                   <v-text-field label="Placeholder" v-model="field.placeholder" class="mb-2" />
+                  <v-text-field label="Szekció neve" v-model="field.group" class="mb-2" />
                   <v-switch v-model="field.enabled" label="Engedélyezve" class="mb-2" />
+                  <v-switch v-model="field.required" label="Kötelező" class="mb-2" />
+
+                  <template v-if="['text', 'number'].includes(field.type)">
+                    <v-text-field
+                      label="Minimum"
+                      v-model.number="field.validations.min"
+                      type="number"
+                    />
+                    <v-text-field
+                      label="Maximum"
+                      v-model.number="field.validations.max"
+                      type="number"
+                    />
+                  </template>
+
+                  <v-text-field
+                    v-if="field.type === 'text'"
+                    label="Regex minta"
+                    v-model="field.validations.pattern"
+                  />
+
+                  <v-text-field
+                    v-if="field.type === 'file'"
+                    label="Max fájlméret (MB)"
+                    v-model.number="field.validations.maxFileSize"
+                    type="number"
+                  />
 
                   <template v-if="field.type === 'select'">
                     <v-select
@@ -206,7 +314,7 @@ onMounted(() => {
                     />
                     <v-textarea
                       v-if="field.sourceType === 'cms'"
-                      label="Opciók JSON"
+                      label="Opcók JSON"
                       v-model="field.optionsText"
                       hint="[{ value: 'a', text: 'A' }]"
                       persistent-hint
@@ -239,9 +347,8 @@ onMounted(() => {
                     @click="removeField(i)"
                     size="small"
                     class="mt-2"
+                    >Törlés</v-btn
                   >
-                    Törlés
-                  </v-btn>
                 </v-card>
               </template>
             </draggable>
@@ -251,7 +358,6 @@ onMounted(() => {
         </v-form>
       </v-window-item>
 
-      <!-- TAB 1: Beküldött űrlapok -->
       <v-window-item :value="1">
         <SubmissionList />
       </v-window-item>

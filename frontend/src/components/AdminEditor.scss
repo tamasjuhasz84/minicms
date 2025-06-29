@@ -31,4 +31,11 @@
     box-shadow: 0 0 0 3px #42a5f5 inset;
     background-color: #bbdefb;
   }
+
+  .compact-color {
+    max-width: 280px;
+    padding: 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
 }
