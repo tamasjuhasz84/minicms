@@ -5,6 +5,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const sqlite3 = require("sqlite3").verbose();
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 require("dotenv").config();
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
@@ -13,9 +14,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const CONTENT_PATH = path.join(__dirname, "data", "content.json");
 const DB_PATH = path.join(__dirname, "data", "submissions.db");
-const API_KEY = process.env.API_KEY || "secret";
-const ADMIN_USER = process.env.ADMIN_USER || "admin";
-const ADMIN_PASS = process.env.ADMIN_PASS || "admin";
+const ADMIN_USER = process.env.ADMIN_USER;
+const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
 app.use(helmet());
@@ -48,30 +48,22 @@ db.serialize(() => {
     )
   `);
 
-  // Biztonságos IP oszlop hozzáadás (csak ha nem létezik)
-  db.get("PRAGMA table_info(submissions)", (err, info) => {
-    if (err) return console.error("Nem sikerült ellenőrizni a sémát:", err);
-
-    db.all("PRAGMA table_info(submissions)", (err, columns) => {
-      if (err)
-        return console.error("Nem sikerült lekérdezni az oszlopokat:", err);
-
-      const hasIpColumn = columns.some((col) => col.name === "ip_address");
-      if (!hasIpColumn) {
-        db.run("ALTER TABLE submissions ADD COLUMN ip_address TEXT", (err) => {
-          if (err)
-            console.error("Nem sikerült az IP mező hozzáadása:", err.message);
-          else console.log("ip_address mező hozzáadva.");
-        });
-      }
-    });
+  db.all("PRAGMA table_info(submissions)", (err, columns) => {
+    if (err)
+      return console.error("Nem sikerült lekérdezni az oszlopokat:", err);
+    const hasIp = columns.some((col) => col.name === "ip_address");
+    if (!hasIp) {
+      db.run("ALTER TABLE submissions ADD COLUMN ip_address TEXT", (err) => {
+        if (err) console.error("Nem sikerült IP mezőt hozzáadni:", err.message);
+        else console.log("ip_address mező hozzáadva.");
+      });
+    }
   });
 });
 
-// Middleware a JWT ellenőrzéséhez
+// Middleware: JWT ellenőrzés
 function verifyToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  const token = req.headers["authorization"]?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "Token hiányzik" });
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
@@ -81,20 +73,27 @@ function verifyToken(req, res, next) {
   });
 }
 
-// Bejelentkezés JWT tokennel
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
-  if (username === ADMIN_USER && password === ADMIN_PASS) {
+  if (username !== ADMIN_USER) {
+    return res
+      .status(401)
+      .json({ success: false, message: "Hibás felhasználónév" });
+  }
+
+  bcrypt.compare(password, ADMIN_PASS_HASH, (err, result) => {
+    if (err || !result) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Hibás bejelentkezés" });
+    }
+
     const token = jwt.sign({ username, role: "admin" }, JWT_SECRET, {
       expiresIn: "2h",
     });
-    return res.json({ success: true, role: "admin", token });
-  }
-
-  res
-    .status(401)
-    .json({ success: false, message: "Hibás bejelentkezési adatok" });
+    res.json({ success: true, role: "admin", token });
+  });
 });
 
 // Publikus tartalom lekérés
@@ -108,23 +107,24 @@ app.get("/content", (req, res) => {
   });
 });
 
-// Validálás mentés előtt
+// Tartalom validálása
 function isValidContent(data) {
-  if (!data || typeof data !== "object") return false;
-  if (!Array.isArray(data.form)) return false;
-  return data.form.every(
-    (field) =>
-      typeof field.label === "string" &&
-      typeof field.type === "string" &&
-      ["text", "select", "switch", "number"].includes(field.type)
+  return (
+    data &&
+    Array.isArray(data.form) &&
+    data.form.every(
+      (f) =>
+        typeof f.label === "string" &&
+        typeof f.type === "string" &&
+        ["text", "select", "switch", "number"].includes(f.type)
+    )
   );
 }
 
-// Tartalom mentése (JWT szükséges)
+// Tartalom mentés
 app.post("/content", verifyToken, (req, res) => {
-  if (req.user?.role !== "admin") {
+  if (req.user?.role !== "admin")
     return res.status(403).json({ error: "Nincs jogosultság" });
-  }
 
   if (!isValidContent(req.body)) {
     return res.status(400).json({ error: "Érvénytelen tartalomstruktúra" });
@@ -144,21 +144,19 @@ app.post("/content", verifyToken, (req, res) => {
   );
 });
 
-// Select mezők opciói (publikus)
+// Select mező opciók
 app.get("/options", (req, res) => {
-  const options = {
+  res.json({
     type: [
       { value: "basic", text: "Alap csomag" },
       { value: "premium", text: "Prémium csomag" },
       { value: "enterprise", text: "Vállalati csomag" },
     ],
-  };
-  res.json(options);
+  });
 });
 
-// Beküldés adatbázisba IP-vel
+// Beküldés mentése IP-vel
 app.post("/submit", (req, res) => {
-  const submittedData = req.body;
   const ip =
     req.headers["x-forwarded-for"]?.split(",")[0] ||
     req.socket?.remoteAddress ||
@@ -167,7 +165,7 @@ app.post("/submit", (req, res) => {
   const stmt = db.prepare(
     "INSERT INTO submissions (data, ip_address) VALUES (?, ?)"
   );
-  stmt.run(JSON.stringify(submittedData), ip, (err) => {
+  stmt.run(JSON.stringify(req.body), ip, (err) => {
     if (err) {
       console.error("Hiba mentéskor:", err);
       return res.status(500).json({ success: false, message: "Mentési hiba." });
@@ -177,7 +175,7 @@ app.post("/submit", (req, res) => {
   stmt.finalize();
 });
 
-// Beküldések lekérése (JWT szükséges)
+// Beküldések lekérése
 app.get("/submissions", verifyToken, (req, res) => {
   if (req.user?.role !== "admin")
     return res.status(403).json({ error: "Nincs jogosultság" });
@@ -219,7 +217,7 @@ app.delete("/submissions", verifyToken, (req, res) => {
   });
 });
 
-// HTTPS redirect (éles környezetben)
+// HTTPS redirect csak production környezetben
 if (process.env.NODE_ENV === "production") {
   app.use((req, res, next) => {
     if (req.protocol !== "https") {

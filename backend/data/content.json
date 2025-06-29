@@ -131,7 +131,7 @@
     }
   ],
   "styles": {
-    "color": "#D219C2",
+    "color": "#78D219",
     "fontSize": "15px",
     "buttonLabel": "Beküldés",
     "labelFontSize": "15px",
@@ -139,6 +139,6 @@
     "inputFontSize": "15px",
     "buttonFontSize": "15px",
     "fontFamily": "Arial",
-    "backgroundColor": "#70921B"
+    "backgroundColor": "#1B9192"
   }
 }
