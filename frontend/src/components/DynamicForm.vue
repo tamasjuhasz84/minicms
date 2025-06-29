@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import axios from 'axios'
+import './DynamicForm.scss'
 
 const props = defineProps({
   formFields: {
@@ -11,7 +12,6 @@ const props = defineProps({
 
 const formData = ref({})
 const selectOptions = ref({})
-const result = ref(null)
 const header = ref({})
 const footer = ref({})
 const showLogin = ref(false)
@@ -86,30 +86,14 @@ function getSelectItems(field) {
   return Array.isArray(data) ? data : []
 }
 
-function calculateAndSubmit() {
+function submitForm() {
   if (!formData.value.active) {
-    alert('A kalkuláció csak akkor engedélyezett, ha a "Beküldhető" mező be van kapcsolva.')
+    alert('A beküldés csak akkor engedélyezett, ha a "Beküldhető" mező be van kapcsolva.')
     return
   }
 
-  let sum = 0
-  if (Array.isArray(props.formFields)) {
-    props.formFields.forEach((field) => {
-      if (field.type === 'number') {
-        const value = parseFloat(formData.value[field.name]) || 0
-        const multiplier = parseFloat(field.multiplier) || 1
-        sum += value * multiplier
-      }
-    })
-  }
-
-  result.value = sum
-
   axios
-    .post('/submit', {
-      ...formData.value,
-      calculated: result.value,
-    })
+    .post('/submit', { ...formData.value })
     .then(() => alert('Sikeres beküldés!'))
     .catch(() => alert('Hiba a beküldés során.'))
 }
@@ -137,10 +121,11 @@ function logout() {
 </script>
 
 <template>
-  <v-app>
+  <v-app class="dynamic-form">
     <v-main>
       <v-container>
-        <div v-if="showLogin && !authenticated">
+        <!-- Admin bejelentkezés -->
+        <div v-if="showLogin && !authenticated" class="login-box">
           <h2 class="text-h5 mb-4">Admin bejelentkezés</h2>
           <v-form @submit.prevent="login">
             <v-text-field v-model="loginForm.username" label="Felhasználónév" required />
@@ -149,21 +134,24 @@ function logout() {
           </v-form>
         </div>
 
+        <!-- Publikus űrlap -->
         <div v-else>
-          <v-card class="pa-4 mb-4 text-center">
+          <!-- Fejléc -->
+          <v-card class="pa-4 mb-4 header-card">
             <v-img
               v-if="header.image"
               :src="header.image"
               height="200"
               width="100%"
-              class="mb-2 rounded"
+              class="mb-2"
               cover
             />
             <h2 class="text-h5 mb-2">{{ header.title }}</h2>
           </v-card>
 
+          <!-- Dinamikus űrlap -->
           <v-form>
-            <div v-for="(field, index) in enabledFields" :key="index" class="mb-4">
+            <div v-for="(field, index) in enabledFields" :key="index" class="form-field">
               <v-text-field
                 v-if="field.type === 'text'"
                 :label="field.label"
@@ -173,7 +161,7 @@ function logout() {
               <v-text-field
                 v-else-if="field.type === 'number'"
                 type="number"
-                :label="field.label + (field.multiplier ? ' (×' + field.multiplier + ')' : '')"
+                :label="field.label"
                 v-model.number="formData[field.name]"
                 :placeholder="field.placeholder || ''"
               />
@@ -198,12 +186,10 @@ function logout() {
               </v-row>
             </div>
 
-            <v-btn color="primary" @click="calculateAndSubmit">Küldés</v-btn>
-            <div v-if="result !== null" class="mt-4">
-              Eredmény: <strong>{{ result }}</strong>
-            </div>
+            <v-btn color="primary" @click="submitForm">Küldés</v-btn>
           </v-form>
 
+          <!-- Lábléc -->
           <v-divider class="my-6"></v-divider>
           <footer class="text-caption text-center">{{ footer.text }}</footer>
         </div>

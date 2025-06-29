@@ -1,0 +1,26 @@
+.app-layout {
+  .v-app-bar {
+    background-color: #1976d2; // például világoskék alap
+    color: white;
+  }
+
+  .v-toolbar-title {
+    font-weight: bold;
+  }
+
+  .login-section {
+    margin-top: 2rem;
+
+    h2 {
+      margin-bottom: 1rem;
+    }
+
+    .v-btn {
+      margin-top: 1rem;
+    }
+  }
+
+  .v-container {
+    padding-top: 2rem;
+  }
+}

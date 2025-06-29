@@ -1,0 +1,32 @@
+.dynamic-form {
+  .header-card {
+    text-align: center;
+
+    h2 {
+      margin-bottom: 0.5rem;
+    }
+
+    .v-img {
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+  }
+
+  .form-field {
+    margin-bottom: 1.5rem;
+  }
+
+  .login-box {
+    margin-bottom: 2rem;
+
+    h2 {
+      margin-bottom: 1rem;
+    }
+  }
+
+  footer {
+    margin-top: 3rem;
+    font-size: 0.8rem;
+    color: #666;
+  }
+}

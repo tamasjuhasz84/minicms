@@ -8,23 +8,30 @@
   },
   "form": [
     {
-      "label": "Beküldhető",
-      "name": "active",
-      "type": "switch",
-      "placeholder": "",
-      "enabled": true,
-      "multiplier": "",
-      "source": "",
-      "sourceField": ""
-    },
-    {
       "label": "API Szelect",
       "name": "apiSelect",
       "type": "select",
       "placeholder": "válasszon",
       "enabled": true,
-      "multiplier": "",
       "source": "/options",
+      "sourceField": ""
+    },
+    {
+      "label": "Szám",
+      "name": "szam",
+      "type": "number",
+      "placeholder": "szam",
+      "enabled": true,
+      "source": "",
+      "sourceField": ""
+    },
+    {
+      "label": "szoveg",
+      "name": "szoveg",
+      "type": "text",
+      "placeholder": "szoveg",
+      "enabled": true,
+      "source": "",
       "sourceField": ""
     },
     {
@@ -33,7 +40,6 @@
       "type": "select",
       "placeholder": "válasszon",
       "enabled": true,
-      "multiplier": "",
       "options": {
         "type": [
           {
@@ -52,12 +58,11 @@
       }
     },
     {
-      "label": "Szám",
-      "name": "szam",
-      "type": "number",
-      "placeholder": "szam",
+      "label": "Beküldhető",
+      "name": "active",
+      "type": "switch",
+      "placeholder": "",
       "enabled": true,
-      "multiplier": "45",
       "source": "",
       "sourceField": ""
     }

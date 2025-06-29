@@ -1,0 +1,27 @@
+.submission-card {
+  margin-top: 24px;
+
+  .submission-header {
+    font-weight: bold;
+    font-size: 18px;
+  }
+
+  .submission-table {
+    pre {
+      font-size: 12px;
+      background-color: #f5f5f5;
+      padding: 8px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+
+    .v-btn {
+      text-transform: none;
+      font-weight: 500;
+    }
+
+    .v-icon {
+      margin-inline-end: 6px;
+    }
+  }
+}

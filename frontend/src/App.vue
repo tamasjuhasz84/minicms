@@ -60,7 +60,7 @@ onMounted(loadContent)
 </script>
 
 <template>
-  <v-app>
+  <v-app class="app-layout">
     <v-app-bar app>
       <v-toolbar-title>MiniCMS</v-toolbar-title>
       <v-spacer />
@@ -71,7 +71,7 @@ onMounted(loadContent)
     <v-main>
       <v-container>
         <!-- Bejelentkezés -->
-        <div v-if="showLogin && !authenticated">
+        <div v-if="showLogin && !authenticated" class="login-section">
           <h2 class="text-h5 mb-4">Admin bejelentkezés</h2>
           <v-form @submit.prevent="login">
             <v-text-field v-model="loginForm.username" label="Felhasználónév" required />

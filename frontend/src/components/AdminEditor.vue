@@ -1,12 +1,17 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import draggable from 'vuedraggable'
+import './AdminEditor.scss'
+import SubmissionList from './SubmissionList.vue'
 
 const props = defineProps({
   initialContent: Object,
 })
 
-const emit = defineEmits(['logout', 'content-updated'])
+const emit = defineEmits(['content-updated'])
+
+const tab = ref(0)
 
 const editableContent = ref({
   header: { title: '', image: '' },
@@ -21,7 +26,6 @@ function addField() {
     type: 'text',
     placeholder: '',
     enabled: true,
-    multiplier: '',
     sourceType: 'cms',
     optionsText: '',
     optionsKey: '',
@@ -102,7 +106,6 @@ onMounted(() => {
         type: f.type || 'text',
         placeholder: f.placeholder || '',
         enabled: typeof f.enabled === 'undefined' ? true : f.enabled,
-        multiplier: f.multiplier || '',
         optionsText: '',
         optionsKey: f.optionsKey || '',
         sourceType: '',
@@ -139,102 +142,119 @@ onMounted(() => {
 
 <template>
   <v-container>
-    <v-row align="center" justify="space-between" class="mb-4">
-      <h2 class="text-h5">Űrlap szerkesztése</h2>
-      <v-btn color="secondary" @click="emit('logout')">Kilépés</v-btn>
-    </v-row>
+    <v-tabs v-model="tab" bg-color="primary" dark>
+      <v-tab :value="0">Tartalom</v-tab>
+      <v-tab :value="1">Beküldések</v-tab>
+    </v-tabs>
 
-    <v-form @submit.prevent="saveContent">
-      <v-card class="pa-4 mb-6">
-        <h3 class="text-subtitle-1 mb-2">Fejléc</h3>
-        <v-text-field label="Cím" v-model="editableContent.header.title" class="mb-2" />
-        <v-text-field label="Kép URL" v-model="editableContent.header.image" />
-      </v-card>
+    <v-window v-model="tab">
+      <!-- TAB 0: Tartalomszerkesztés -->
+      <v-window-item :value="0">
+        <v-form @submit.prevent="saveContent">
+          <v-card class="pa-4 mb-6">
+            <h3 class="text-subtitle-1 mb-2">Fejléc</h3>
+            <v-text-field label="Cím" v-model="editableContent.header.title" />
+            <v-text-field label="Kép URL" v-model="editableContent.header.image" />
+          </v-card>
 
-      <v-card class="pa-4 mb-6">
-        <h3 class="text-subtitle-1 mb-2">Lábléc</h3>
-        <v-text-field label="Szöveg" v-model="editableContent.footer.text" />
-      </v-card>
+          <v-card class="pa-4 mb-6">
+            <h3 class="text-subtitle-1 mb-2">Lábléc</h3>
+            <v-text-field label="Szöveg" v-model="editableContent.footer.text" />
+          </v-card>
 
-      <v-card class="pa-4 mb-6">
-        <h3 class="text-subtitle-1 mb-4">Űrlap mezők</h3>
+          <v-card class="pa-4 mb-6">
+            <h3 class="text-subtitle-1 mb-4">Űrlap mezők</h3>
+            <v-btn color="success" class="mb-4" @click="addField">Új mező hozzáadása</v-btn>
 
-        <v-btn color="success" class="mb-4" @click="addField">Új mező hozzáadása</v-btn>
+            <draggable
+              v-model="editableContent.form"
+              item-key="name"
+              animation="250"
+              class="form-draggable"
+              :options="{
+                scroll: true,
+                scrollSensitivity: 60,
+                scrollSpeed: 10,
+                ghostClass: 'ghost',
+                chosenClass: 'chosen',
+              }"
+            >
+              <template #item="{ element: field, index: i }">
+                <v-card class="pa-4 mb-4 draggable-card">
+                  <div class="d-flex align-center justify-space-between mb-3">
+                    <strong>{{ field.label || 'Új mező' }}</strong>
+                    <span class="drag-icon">☰</span>
+                  </div>
 
-        <div v-for="(field, i) in editableContent.form" :key="i" class="mb-6">
-          <v-text-field label="Mező címkéje (label)" v-model="field.label" class="mb-2" />
-          <v-select
-            label="Típus"
-            :items="['text', 'number', 'select', 'switch']"
-            v-model="field.type"
-            class="mb-2"
-          />
-          <v-text-field label="Név (name)" v-model="field.name" class="mb-2" />
-          <v-text-field label="Placeholder" v-model="field.placeholder" class="mb-2" />
+                  <v-text-field label="Címke" v-model="field.label" class="mb-2" />
+                  <v-select
+                    label="Típus"
+                    :items="['text', 'number', 'select', 'switch']"
+                    v-model="field.type"
+                    class="mb-2"
+                  />
+                  <v-text-field label="Név" v-model="field.name" class="mb-2" />
+                  <v-text-field label="Placeholder" v-model="field.placeholder" class="mb-2" />
+                  <v-switch v-model="field.enabled" label="Engedélyezve" class="mb-2" />
 
-          <v-switch v-model="field.enabled" label="Mező engedélyezve" class="mb-2" />
+                  <template v-if="field.type === 'select'">
+                    <v-select
+                      label="Forrás típusa"
+                      :items="['cms', 'api']"
+                      v-model="field.sourceType"
+                      class="mb-2"
+                    />
+                    <v-textarea
+                      v-if="field.sourceType === 'cms'"
+                      label="Opciók JSON"
+                      v-model="field.optionsText"
+                      hint="[{ value: 'a', text: 'A' }]"
+                      persistent-hint
+                      auto-grow
+                      class="mb-2"
+                    />
+                    <v-text-field
+                      v-if="field.sourceType === 'cms'"
+                      label="CMS kulcs"
+                      v-model="field.optionsKey"
+                      class="mb-2"
+                    />
+                    <v-text-field
+                      v-if="field.sourceType === 'api'"
+                      label="API URL"
+                      v-model="field.source"
+                      class="mb-2"
+                    />
+                    <v-text-field
+                      v-if="field.sourceType === 'api'"
+                      label="API kulcs"
+                      v-model="field.sourceField"
+                      class="mb-2"
+                    />
+                  </template>
 
-          <v-text-field
-            v-if="field.type === 'number'"
-            label="Szorzó (multiplier)"
-            v-model="field.multiplier"
-            class="mb-2"
-          />
+                  <v-btn
+                    v-if="field.name !== 'active'"
+                    color="error"
+                    @click="removeField(i)"
+                    size="small"
+                    class="mt-2"
+                  >
+                    Törlés
+                  </v-btn>
+                </v-card>
+              </template>
+            </draggable>
+          </v-card>
 
-          <div v-if="field.type === 'select'">
-            <v-select
-              label="Select forrás"
-              :items="['cms', 'api']"
-              v-model="field.sourceType"
-              class="mb-2"
-            />
+          <v-btn type="submit" color="primary">Mentés</v-btn>
+        </v-form>
+      </v-window-item>
 
-            <v-textarea
-              v-if="field.sourceType === 'cms'"
-              label="Opciók JSON (pl. [{ value: a, text: A }])"
-              v-model="field.optionsText"
-              hint="Tömb formátumban: value + text"
-              persistent-hint
-              auto-grow
-            />
-
-            <v-text-field
-              v-if="field.sourceType === 'cms'"
-              label="CMS kulcs (pl. type)"
-              v-model="field.optionsKey"
-              hint="Ha objektumba kell menteni: { kulcs: tömb }"
-              class="mb-2"
-            />
-
-            <v-text-field
-              v-if="field.sourceType === 'api'"
-              label="API forrás URL (pl. /options)"
-              v-model="field.source"
-              class="mb-2"
-            />
-            <v-text-field
-              v-if="field.sourceType === 'api'"
-              label="API válasz kulcs (pl. type)"
-              v-model="field.sourceField"
-              class="mb-2"
-            />
-          </div>
-
-          <v-btn
-            v-if="field.name !== 'active'"
-            color="error"
-            @click="removeField(i)"
-            size="small"
-            class="mt-2"
-          >
-            Törlés
-          </v-btn>
-
-          <v-divider class="my-4"></v-divider>
-        </div>
-      </v-card>
-
-      <v-btn type="submit" color="primary">Mentés</v-btn>
-    </v-form>
+      <!-- TAB 1: Beküldött űrlapok -->
+      <v-window-item :value="1">
+        <SubmissionList />
+      </v-window-item>
+    </v-window>
   </v-container>
 </template>

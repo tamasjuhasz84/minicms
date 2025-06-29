@@ -5,10 +5,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    vue(),
-    vueDevTools(),
-  ],
+  plugins: [vue(), vueDevTools()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -16,15 +13,15 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/options': 'http://backend:3000',
-      '/submit': 'http://backend:3000',
-      '/content': 'http://backend:3000',
-      '/login': 'http://backend:3000',
-      '/submissions': 'http://backend:3000',
-    }
+      '/content': 'http://localhost:3000',
+      '/submit': 'http://localhost:3000',
+      '/options': 'http://localhost:3000',
+      '/login': 'http://localhost:3000',
+      '/submissions': 'http://localhost:3000',
+    },
   },
   preview: {
     port: 4173,
-    host: true
-  }
+    host: true,
+  },
 })
