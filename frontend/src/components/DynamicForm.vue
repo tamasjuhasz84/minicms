@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import axios from 'axios'
+import { v4 as uuidv4 } from 'uuid'
 import './DynamicForm.scss'
 
 const props = defineProps({
@@ -24,11 +25,16 @@ const showLogin = ref(false)
 const authenticated = ref(false)
 const loginForm = ref({ username: '', password: '' })
 const errorMessages = ref([])
+const fieldMap = ref([])
 
 const enabledFields = computed(() => {
-  return Array.isArray(props.formFields)
-    ? props.formFields.filter((field) => field.enabled !== false)
-    : []
+  if (!Array.isArray(props.formFields)) return []
+
+  fieldMap.value = props.formFields
+    .filter((f) => f.enabled !== false)
+    .map((field) => ({ ...field, uuid: uuidv4() }))
+
+  return fieldMap.value
 })
 
 watch(
@@ -98,12 +104,40 @@ function getSelectItems(field) {
   return Array.isArray(data) ? data : []
 }
 
+function getValidationRules(field) {
+  const rules = []
+
+  if (field.required) {
+    rules.push((v) => (v !== null && v !== '') || 'Kötelező mező')
+  }
+
+  if (field.type === 'number') {
+    if (field.validations?.min !== null) {
+      rules.push((v) => v >= field.validations.min || `Minimum érték: ${field.validations.min}`)
+    }
+    if (field.validations?.max !== null) {
+      rules.push((v) => v <= field.validations.max || `Maximum érték: ${field.validations.max}`)
+    }
+  }
+
+  if (field.type === 'text' && field.validations?.pattern) {
+    try {
+      const regex = new RegExp(field.validations.pattern)
+      rules.push((v) => regex.test(v) || 'Hibás formátum')
+    } catch (e) {
+      console.warn('Hibás regex minta:', field.validations.pattern)
+    }
+  }
+
+  return rules
+}
+
 async function submitForm() {
   errorMessages.value = []
 
   const result = await formRef.value?.validate()
   if (!result?.valid) {
-    errorMessages.value.push('Kérjük, töltsd ki a kötelező mezőket.')
+    errorMessages.value.push('Kérjük, javítsd a hibás mezőket.')
     return
   }
 
@@ -124,6 +158,11 @@ function login() {
   axios
     .post('/login', loginForm.value)
     .then((res) => {
+      const token = res.data.token
+      if (token) {
+        localStorage.setItem('jwt', token)
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      }
       if (res.data.role === 'admin') {
         authenticated.value = true
         showLogin.value = false
@@ -139,6 +178,8 @@ function logout() {
   showLogin.value = false
   loginForm.value.username = ''
   loginForm.value.password = ''
+  localStorage.removeItem('jwt')
+  delete axios.defaults.headers.common['Authorization']
 }
 </script>
 
@@ -157,7 +198,6 @@ function logout() {
   >
     <v-main>
       <v-container>
-        <!-- Admin bejelentkezés -->
         <div v-if="showLogin && !authenticated" class="login-box">
           <h2 class="text-h5 mb-4">Admin bejelentkezés</h2>
           <v-form @submit.prevent="login">
@@ -167,9 +207,7 @@ function logout() {
           </v-form>
         </div>
 
-        <!-- Publikus űrlap -->
         <div v-else>
-          <!-- Fejléc -->
           <v-card class="pa-4 mb-4 header-card">
             <v-img
               v-if="header.image"
@@ -182,11 +220,10 @@ function logout() {
             <h2 class="text-h5 mb-2">{{ header.title }}</h2>
           </v-card>
 
-          <!-- Dinamikus űrlap -->
           <v-form ref="formRef">
             <div
-              v-for="(field, index) in enabledFields"
-              :key="index"
+              v-for="field in enabledFields"
+              :key="field.uuid"
               class="form-field"
               :style="{ fontSize: styles.fontSize }"
             >
@@ -195,7 +232,7 @@ function logout() {
                 :label="field.label"
                 v-model="formData[field.name]"
                 :placeholder="field.placeholder || ''"
-                :rules="field.required ? [(v) => !!v || 'Kötelező mező'] : []"
+                :rules="getValidationRules(field)"
               />
               <v-text-field
                 v-else-if="field.type === 'number'"
@@ -203,7 +240,7 @@ function logout() {
                 :label="field.label"
                 v-model.number="formData[field.name]"
                 :placeholder="field.placeholder || ''"
-                :rules="field.required ? [(v) => (v !== null && v !== '') || 'Kötelező mező'] : []"
+                :rules="getValidationRules(field)"
               />
               <v-select
                 v-else-if="field.type === 'select'"
@@ -213,7 +250,7 @@ function logout() {
                 item-value="value"
                 v-model="formData[field.name]"
                 :placeholder="field.placeholder || ''"
-                :rules="field.required ? [(v) => !!v || 'Kötelező mező'] : []"
+                :rules="getValidationRules(field)"
               />
               <v-row v-else-if="field.type === 'switch'" class="my-2">
                 <v-col cols="12">
@@ -240,7 +277,6 @@ function logout() {
             </v-alert>
           </v-form>
 
-          <!-- Lábléc -->
           <v-divider class="my-6"></v-divider>
           <footer class="text-caption text-center">{{ footer.text }}</footer>
         </div>

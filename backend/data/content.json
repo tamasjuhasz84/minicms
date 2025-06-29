@@ -8,6 +8,7 @@
   },
   "form": [
     {
+      "id": "280b12d3-3e09-48c2-a7f0-9e73769d9572",
       "label": "API Szelect",
       "name": "apiSelect",
       "type": "select",
@@ -25,6 +26,7 @@
       "sourceField": ""
     },
     {
+      "id": "3cf43437-b524-4857-87cd-780fde37df91",
       "label": "Szám",
       "name": "szam",
       "type": "number",
@@ -42,6 +44,7 @@
       "sourceField": ""
     },
     {
+      "id": "b68d4afd-d93f-4993-a132-8bb872d6b98b",
       "label": "szoveg",
       "name": "szoveg",
       "type": "text",
@@ -52,6 +55,24 @@
       "validations": {
         "min": null,
         "max": null,
+        "pattern": "^[A-Za-z0-9]+$",
+        "maxFileSize": null
+      },
+      "source": "",
+      "sourceField": ""
+    },
+    {
+      "id": "60c882e0-92ad-4fa4-8a2e-344a9eef05be",
+      "label": "Másik szám",
+      "name": "szam2123",
+      "type": "number",
+      "placeholder": "Egy szám",
+      "enabled": true,
+      "required": false,
+      "group": "",
+      "validations": {
+        "min": 20,
+        "max": 300,
         "pattern": "",
         "maxFileSize": null
       },
@@ -59,6 +80,7 @@
       "sourceField": ""
     },
     {
+      "id": "0ea37b0d-02f4-405c-a0e4-5395c491de8a",
       "label": "cms Select",
       "name": "csmSelect",
       "type": "select",
@@ -90,6 +112,7 @@
       }
     },
     {
+      "id": "e7e13faa-da66-40b0-a474-f66de4ad7f7f",
       "label": "Beküldhető",
       "name": "active",
       "type": "switch",
@@ -108,7 +131,7 @@
     }
   ],
   "styles": {
-    "color": "#1951D2",
+    "color": "#D219C2",
     "fontSize": "15px",
     "buttonLabel": "Beküldés",
     "labelFontSize": "15px",
@@ -116,6 +139,6 @@
     "inputFontSize": "15px",
     "buttonFontSize": "15px",
     "fontFamily": "Arial",
-    "backgroundColor": "#8D921B"
+    "backgroundColor": "#70921B"
   }
 }

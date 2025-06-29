@@ -4,6 +4,7 @@ const path = require("path");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const sqlite3 = require("sqlite3").verbose();
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
@@ -13,29 +14,29 @@ const PORT = process.env.PORT || 3000;
 const CONTENT_PATH = path.join(__dirname, "data", "content.json");
 const DB_PATH = path.join(__dirname, "data", "submissions.db");
 const API_KEY = process.env.API_KEY || "secret";
+const ADMIN_USER = process.env.ADMIN_USER || "admin";
+const ADMIN_PASS = process.env.ADMIN_PASS || "admin";
+const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
+
 app.use(helmet());
+app.use(bodyParser.json());
 
-// Rate limiting to prevent brute force attacks
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later.",
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Túl sok kérés érkezett. Kérlek, próbáld meg később.",
 });
-app.use("/submit", limiter); // Apply the rate limit for the /submit endpoint
+app.use("/submit", limiter);
 
-// CORS - restrict allowed origins
 app.use(
   cors({
-    origin: "https://your-allowed-domain.com", // adjust accordingly
-    methods: ["GET", "POST"],
-    credentials: true,
+    origin: "*",
+    methods: ["GET", "POST", "DELETE"],
+    credentials: false,
   })
 );
 
-// Body parsing middleware
-app.use(bodyParser.json());
-
-// SQLite adatbázis inicializálása
+// SQLite init
 const db = new sqlite3.Database(DB_PATH);
 db.serialize(() => {
   db.run(`
@@ -47,32 +48,47 @@ db.serialize(() => {
   `);
 });
 
-// Login endpoint
+// Middleware a JWT ellenőrzéséhez
+function verifyToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Token hiányzik" });
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: "Érvénytelen token" });
+    req.user = user;
+    next();
+  });
+}
+
+// Bejelentkezés JWT tokennel
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
-  const validUsers = {
-    admin147: "admin147",
-  };
 
-  if (validUsers[username] && validUsers[username] === password) {
-    res.json({
-      success: true,
-      role: username.startsWith("admin") ? "admin" : "user",
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    const token = jwt.sign({ username, role: "admin" }, JWT_SECRET, {
+      expiresIn: "2h",
     });
-  } else {
-    res.status(401).json({ success: false, message: "Invalid credentials" });
+    return res.json({ success: true, role: "admin", token });
   }
+
+  res
+    .status(401)
+    .json({ success: false, message: "Hibás bejelentkezési adatok" });
 });
 
-// Tartalom lekérdezése
+// Publikus tartalom lekérés
 app.get("/content", (req, res) => {
   fs.readFile(CONTENT_PATH, "utf-8", (err, data) => {
-    if (err) return res.status(500).json({ error: "Failed to load content." });
+    if (err)
+      return res
+        .status(500)
+        .json({ error: "Nem sikerült betölteni a tartalmat." });
     res.json(JSON.parse(data));
   });
 });
 
-// JSON struktúra ellenőrzése mentés előtt
+// Validálás mentés előtt
 function isValidContent(data) {
   if (!data || typeof data !== "object") return false;
   if (!Array.isArray(data.form)) return false;
@@ -84,14 +100,14 @@ function isValidContent(data) {
   );
 }
 
-// Tartalom mentése
-app.post("/content", (req, res) => {
-  if (req.query.api_key !== API_KEY) {
-    return res.status(403).json({ error: "Unauthorized" });
+// Tartalom mentése (JWT szükséges)
+app.post("/content", verifyToken, (req, res) => {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ error: "Nincs jogosultság" });
   }
 
   if (!isValidContent(req.body)) {
-    return res.status(400).json({ error: "Invalid content structure." });
+    return res.status(400).json({ error: "Érvénytelen tartalomstruktúra" });
   }
 
   fs.writeFile(
@@ -100,13 +116,15 @@ app.post("/content", (req, res) => {
     "utf-8",
     (err) => {
       if (err)
-        return res.status(500).json({ error: "Failed to save content." });
-      res.json({ message: "Content updated successfully." });
+        return res
+          .status(500)
+          .json({ error: "Nem sikerült menteni a tartalmat" });
+      res.json({ message: "A tartalom frissítve lett." });
     }
   );
 });
 
-// Select mezőhöz opciók kiszolgálása
+// Select mezők opciói (publikus)
 app.get("/options", (req, res) => {
   const options = {
     type: [
@@ -118,64 +136,63 @@ app.get("/options", (req, res) => {
   res.json(options);
 });
 
-// Kalkuláció beküldése és mentése adatbázisba
+// Beküldés adatbázisba
 app.post("/submit", (req, res) => {
   const submittedData = req.body;
-  console.log("Beküldött adat:", submittedData);
-
   const stmt = db.prepare("INSERT INTO submissions (data) VALUES (?)");
   stmt.run(JSON.stringify(submittedData), (err) => {
     if (err) {
-      console.error("Hiba adatbázismentéskor:", err);
-      return res
-        .status(500)
-        .json({ success: false, message: "Adatmentési hiba." });
+      console.error("Hiba mentéskor:", err);
+      return res.status(500).json({ success: false, message: "Mentési hiba." });
     }
-    res.json({ success: true, message: "Adat mentve az adatbázisba." });
+    res.json({ success: true, message: "Mentés sikeres." });
   });
   stmt.finalize();
 });
 
-// Adatlekérés admin részére
-app.get("/submissions", (req, res) => {
+// Beküldések lekérése (JWT szükséges)
+app.get("/submissions", verifyToken, (req, res) => {
+  if (req.user?.role !== "admin")
+    return res.status(403).json({ error: "Nincs jogosultság" });
+
   db.all("SELECT * FROM submissions ORDER BY created_at DESC", (err, rows) => {
-    if (err) return res.status(500).json({ error: "DB lekérdezési hiba" });
+    if (err) return res.status(500).json({ error: "Lekérdezési hiba" });
     res.json(rows);
   });
 });
 
-app.delete("/submissions/:id", (req, res) => {
-  const id = req.params.id;
-  db.run("DELETE FROM submissions WHERE id = ?", [id], function (err) {
-    if (err) {
-      console.error("Hiba törlés közben:", err);
-      return res
-        .status(500)
-        .json({ error: "Nem sikerült törölni a rekordot." });
+// Egy beküldés törlése
+app.delete("/submissions/:id", verifyToken, (req, res) => {
+  if (req.user?.role !== "admin")
+    return res.status(403).json({ error: "Nincs jogosultság" });
+
+  db.run(
+    "DELETE FROM submissions WHERE id = ?",
+    [req.params.id],
+    function (err) {
+      if (err) return res.status(500).json({ error: "Törlési hiba" });
+      if (this.changes === 0)
+        return res.status(404).json({ error: "Nem található a beküldés" });
+      res.json({ success: true, message: `Törölve: ${req.params.id}` });
     }
-    if (this.changes === 0) {
-      return res
-        .status(404)
-        .json({ error: "Nincs ilyen azonosítójú beküldés." });
-    }
-    res.json({ success: true, message: `Beküldés ${id} törölve.` });
-  });
+  );
 });
 
-app.delete("/submissions", (req, res) => {
+// Összes beküldés törlése
+app.delete("/submissions", verifyToken, (req, res) => {
+  if (req.user?.role !== "admin")
+    return res.status(403).json({ error: "Nincs jogosultság" });
+
   db.run("DELETE FROM submissions", function (err) {
-    if (err) {
-      console.error("Hiba az összes törlése közben:", err);
+    if (err)
       return res
         .status(500)
-        .json({ error: "Nem sikerült törölni a beküldéseket." });
-    }
+        .json({ error: "Nem sikerült törölni az összes beküldést" });
     res.json({ success: true, message: "Összes beküldés törölve." });
   });
 });
 
-// Https redirect (ha élesben HTTPS-t használsz)
-// Ha a szerver nem HTTPS-en fut, átirányítja HTTP-ről HTTPS-re
+// HTTPS redirect (éles környezetben)
 if (process.env.NODE_ENV === "production") {
   app.use((req, res, next) => {
     if (req.protocol !== "https") {

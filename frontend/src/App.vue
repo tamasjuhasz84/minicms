@@ -15,6 +15,28 @@ const loginForm = ref({
 const formFields = ref([])
 const initialContent = ref(null)
 
+// Axios beállítások
+const token = localStorage.getItem('jwt')
+if (token) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+}
+
+// Globális válasz interceptor token lejáratra
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && [401, 403].includes(error.response.status)) {
+      localStorage.removeItem('jwt')
+      delete axios.defaults.headers.common['Authorization']
+      authenticated.value = false
+      role.value = null
+      showLogin.value = true
+      alert('A munkamenet lejárt. Kérlek, jelentkezz be újra.')
+    }
+    return Promise.reject(error)
+  },
+)
+
 function loadContent() {
   axios
     .get('/content')
@@ -29,6 +51,10 @@ function login() {
   axios
     .post('/login', loginForm.value)
     .then((res) => {
+      if (res.data.token) {
+        localStorage.setItem('jwt', res.data.token)
+        axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
+      }
       if (res.data.role === 'admin') {
         authenticated.value = true
         role.value = res.data.role
@@ -49,6 +75,8 @@ function logout() {
   showLogin.value = false
   loginForm.value.username = ''
   loginForm.value.password = ''
+  localStorage.removeItem('jwt')
+  delete axios.defaults.headers.common['Authorization']
 }
 
 function handleContentUpdate(newContent) {
@@ -56,7 +84,28 @@ function handleContentUpdate(newContent) {
   formFields.value = newContent.form || []
 }
 
-onMounted(loadContent)
+onMounted(() => {
+  // Token visszatöltés
+  const token = localStorage.getItem('jwt')
+  if (token) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+    // Opcionálisan dekódolhatod is, pl. ha a role is kell
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      if (payload.role === 'admin') {
+        authenticated.value = true
+        role.value = 'admin'
+      }
+    } catch (err) {
+      console.warn('Érvénytelen token:', err)
+      localStorage.removeItem('jwt')
+    }
+  }
+
+  // Tartalom betöltése
+  loadContent()
+})
 </script>
 
 <template>

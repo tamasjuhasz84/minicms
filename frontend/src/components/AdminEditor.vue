@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import draggable from 'vuedraggable'
+import { v4 as uuidv4 } from 'uuid'
 import './AdminEditor.scss'
 import SubmissionList from './SubmissionList.vue'
 
@@ -30,6 +31,7 @@ const editableContent = ref({
 
 function addField() {
   editableContent.value.form.push({
+    id: uuidv4(),
     label: '',
     name: '',
     type: 'text',
@@ -110,6 +112,7 @@ onMounted(() => {
 
     if (!content.form.some((f) => f.name === 'active')) {
       content.form.unshift({
+        id: uuidv4(),
         label: 'Beküldhető',
         name: 'active',
         type: 'switch',
@@ -120,6 +123,7 @@ onMounted(() => {
 
     content.form = content.form.map((f) => {
       const field = {
+        id: f.id || uuidv4(),
         label: f.label || '',
         name: f.name || '',
         type: f.type || 'text',
@@ -186,17 +190,20 @@ onMounted(() => {
     <v-window v-model="tab">
       <v-window-item :value="0">
         <v-form @submit.prevent="saveContent">
+          <!-- Fejléc -->
           <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-2">Fejléc</h3>
             <v-text-field label="Cím" v-model="editableContent.header.title" />
             <v-text-field label="Kép URL" v-model="editableContent.header.image" />
           </v-card>
 
+          <!-- Lábléc -->
           <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-2">Lábléc</h3>
             <v-text-field label="Szöveg" v-model="editableContent.footer.text" />
           </v-card>
 
+          <!-- Stílusok -->
           <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-2">Stílusok</h3>
             <v-text-field
@@ -242,13 +249,14 @@ onMounted(() => {
             </div>
           </v-card>
 
+          <!-- Mezők -->
           <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-4">Űrlap mezők</h3>
             <v-btn color="success" class="mb-4" @click="addField">Új mező hozzáadása</v-btn>
 
             <draggable
               v-model="editableContent.form"
-              item-key="name"
+              item-key="id"
               animation="250"
               class="form-draggable"
               :options="{
@@ -266,16 +274,47 @@ onMounted(() => {
                     <span class="drag-icon">☰</span>
                   </div>
 
-                  <v-text-field label="Címke" v-model="field.label" class="mb-2" />
+                  <v-text-field
+                    label="Címke"
+                    v-model="field.label"
+                    class="mb-2"
+                    hint="Mező feliratként jelenik meg."
+                    persistent-hint
+                  />
+
                   <v-select
                     :items="['text', 'number', 'select', 'switch', 'file']"
                     label="Típus"
                     v-model="field.type"
                     class="mb-2"
+                    hint="A mező típusa (pl. szöveg, szám, választólista, stb.)"
+                    persistent-hint
                   />
-                  <v-text-field label="Név" v-model="field.name" class="mb-2" />
-                  <v-text-field label="Placeholder" v-model="field.placeholder" class="mb-2" />
-                  <v-text-field label="Szekció neve" v-model="field.group" class="mb-2" />
+
+                  <v-text-field
+                    label="Név"
+                    v-model="field.name"
+                    class="mb-2"
+                    hint="Belső azonosító. Csak betű, szám, kötőjel és aláhúzás használható."
+                    persistent-hint
+                  />
+
+                  <v-text-field
+                    label="Placeholder"
+                    v-model="field.placeholder"
+                    class="mb-2"
+                    hint="A mezőben megjelenő segítő szöveg."
+                    persistent-hint
+                  />
+
+                  <v-text-field
+                    label="Szekció neve"
+                    v-model="field.group"
+                    class="mb-2"
+                    hint="Egy szöveges szekciónév (pl. 'Kapcsolat')."
+                    persistent-hint
+                  />
+
                   <v-switch v-model="field.enabled" label="Engedélyezve" class="mb-2" />
                   <v-switch v-model="field.required" label="Kötelező" class="mb-2" />
 
@@ -284,11 +323,15 @@ onMounted(() => {
                       label="Minimum"
                       v-model.number="field.validations.min"
                       type="number"
+                      hint="Legkisebb elfogadható érték (csak számnál)"
+                      persistent-hint
                     />
                     <v-text-field
                       label="Maximum"
                       v-model.number="field.validations.max"
                       type="number"
+                      hint="Legnagyobb elfogadható érték (csak számnál)"
+                      persistent-hint
                     />
                   </template>
 
@@ -296,13 +339,25 @@ onMounted(() => {
                     v-if="field.type === 'text'"
                     label="Regex minta"
                     v-model="field.validations.pattern"
-                  />
+                    hint="Pl. ^[A-Za-z0-9]+$ (csak betűk és számok)"
+                    persistent-hint
+                  >
+                    <template #append>
+                      <v-tooltip text="Szabályos kifejezés, aminek meg kell felelnie a szövegnek.">
+                        <template #activator="{ props }">
+                          <v-icon v-bind="props" icon="mdi-help-circle" size="small" />
+                        </template>
+                      </v-tooltip>
+                    </template>
+                  </v-text-field>
 
                   <v-text-field
                     v-if="field.type === 'file'"
                     label="Max fájlméret (MB)"
                     v-model.number="field.validations.maxFileSize"
                     type="number"
+                    hint="Csak fájlmező esetén értelmezett."
+                    persistent-hint
                   />
 
                   <template v-if="field.type === 'select'">
@@ -311,34 +366,66 @@ onMounted(() => {
                       :items="['cms', 'api']"
                       v-model="field.sourceType"
                       class="mb-2"
+                      hint="Az opciók forrása (saját CMS vagy API)"
+                      persistent-hint
                     />
+
                     <v-textarea
                       v-if="field.sourceType === 'cms'"
                       label="Opcók JSON"
                       v-model="field.optionsText"
-                      hint="[{ value: 'a', text: 'A' }]"
+                      hint="Pl. [{ value: 'a', text: 'A' }]"
                       persistent-hint
                       auto-grow
                       class="mb-2"
                     />
+
                     <v-text-field
                       v-if="field.sourceType === 'cms'"
                       label="CMS kulcs"
                       v-model="field.optionsKey"
                       class="mb-2"
-                    />
+                      hint="Az objektum kulcs, ahol az opciók tömbje van (pl. 'options')"
+                      persistent-hint
+                    >
+                      <template #append>
+                        <v-tooltip
+                          text="Ha az opciók JSON-ben egy kulcs alatt találhatók, pl. { 'options': [...] }, írd be: options"
+                        >
+                          <template #activator="{ props }">
+                            <v-icon v-bind="props" icon="mdi-help-circle" size="small" />
+                          </template>
+                        </v-tooltip>
+                      </template>
+                    </v-text-field>
+
                     <v-text-field
                       v-if="field.sourceType === 'api'"
                       label="API URL"
                       v-model="field.source"
                       class="mb-2"
+                      hint="Például: /api/options"
+                      persistent-hint
                     />
+
                     <v-text-field
                       v-if="field.sourceType === 'api'"
                       label="API kulcs"
                       v-model="field.sourceField"
                       class="mb-2"
-                    />
+                      hint="Az a kulcs a válaszban, ami alatt a tömb van (pl. 'data')"
+                      persistent-hint
+                    >
+                      <template #append>
+                        <v-tooltip
+                          text="Az API válasz JSON objektumában található kulcs neve, ahol a tömb található."
+                        >
+                          <template #activator="{ props }">
+                            <v-icon v-bind="props" icon="mdi-help-circle" size="small" />
+                          </template>
+                        </v-tooltip>
+                      </template>
+                    </v-text-field>
                   </template>
 
                   <v-btn
@@ -347,8 +434,9 @@ onMounted(() => {
                     @click="removeField(i)"
                     size="small"
                     class="mt-2"
-                    >Törlés</v-btn
                   >
+                    Törlés
+                  </v-btn>
                 </v-card>
               </template>
             </draggable>
