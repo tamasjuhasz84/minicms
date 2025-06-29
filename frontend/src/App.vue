@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useTheme } from 'vuetify'
 import axios from 'axios'
 import DynamicForm from './components/DynamicForm.vue'
 import AdminEditor from './components/AdminEditor.vue'
@@ -15,13 +16,22 @@ const loginForm = ref({
 const formFields = ref([])
 const initialContent = ref(null)
 
+// Sötét mód állapot
+const isDarkMode = ref(localStorage.getItem('darkMode') === 'true')
+const theme = useTheme()
+
+watch(isDarkMode, (val) => {
+  theme.global.name.value = val ? 'dark' : 'light'
+  localStorage.setItem('darkMode', val)
+})
+
 // Axios beállítások
 const token = localStorage.getItem('jwt')
 if (token) {
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 }
 
-// Globális válasz interceptor token lejáratra
+// Interceptor token lejárat esetén
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -85,12 +95,12 @@ function handleContentUpdate(newContent) {
 }
 
 onMounted(() => {
-  // Token visszatöltés
+  // Sötét mód inicializálás
+  theme.global.name.value = isDarkMode.value ? 'dark' : 'light'
+
   const token = localStorage.getItem('jwt')
   if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-
-    // Opcionálisan dekódolhatod is, pl. ha a role is kell
     try {
       const payload = JSON.parse(atob(token.split('.')[1]))
       if (payload.role === 'admin') {
@@ -103,7 +113,6 @@ onMounted(() => {
     }
   }
 
-  // Tartalom betöltése
   loadContent()
 })
 </script>
@@ -113,6 +122,13 @@ onMounted(() => {
     <v-app-bar app>
       <v-toolbar-title>MiniCMS</v-toolbar-title>
       <v-spacer />
+      <v-btn
+        icon
+        @click="isDarkMode = !isDarkMode"
+        :title="isDarkMode ? 'Világos mód' : 'Sötét mód'"
+      >
+        <v-icon>{{ isDarkMode ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
+      </v-btn>
       <v-btn text v-if="!authenticated" @click="showLogin = true">Bejelentkezés</v-btn>
       <v-btn text v-else @click="logout">Kilépés</v-btn>
     </v-app-bar>

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import * as XLSX from 'xlsx'
 import './SubmissionList.scss'
 
 const submissions = ref([])
@@ -8,6 +9,7 @@ const submissions = ref([])
 const headers = ref([
   { text: 'ID', value: 'id' },
   { text: 'Dátum', value: 'created_at' },
+  { text: 'IP cím', value: 'ip_address' },
   { text: 'Űrlapadatok', value: 'data' },
   { text: 'Műveletek', value: 'actions', sortable: false },
 ])
@@ -30,23 +32,26 @@ function deleteAll() {
   }
 }
 
-function exportAll() {
-  axios.get('/submissions').then((res) => {
-    const data = res.data
+function getExportRows(data) {
+  return data.map((row) => {
+    const parsed = JSON.parse(row.data)
+    return {
+      ID: row.id,
+      Dátum: new Date(row.created_at).toLocaleString(),
+      IP: row.ip_address || 'ismeretlen',
+      ...parsed,
+    }
+  })
+}
 
-    if (!data.length) {
+function exportCSV() {
+  axios.get('/submissions').then((res) => {
+    const rows = getExportRows(res.data)
+
+    if (!rows.length) {
       alert('Nincs mit exportálni.')
       return
     }
-
-    const rows = data.map((row) => {
-      const parsed = JSON.parse(row.data)
-      return {
-        id: row.id,
-        created_at: new Date(row.created_at).toLocaleString(),
-        ...parsed,
-      }
-    })
 
     const headers = Object.keys(rows[0])
     const csv = [
@@ -57,14 +62,31 @@ function exportAll() {
     ].join('\n')
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = window.URL.createObjectURL(blob)
+    const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
     link.setAttribute('download', 'submissions_export.csv')
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
+    URL.revokeObjectURL(url)
+  })
+}
+
+function exportXLSX() {
+  axios.get('/submissions').then((res) => {
+    const rows = getExportRows(res.data)
+
+    if (!rows.length) {
+      alert('Nincs mit exportálni.')
+      return
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(rows)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Beküldések')
+
+    XLSX.writeFile(workbook, 'submissions_export.xlsx')
   })
 }
 
@@ -80,9 +102,13 @@ onMounted(loadSubmissions)
           <v-icon start>mdi-delete-forever</v-icon>
           Összes törlése
         </v-btn>
-        <v-btn color="primary" @click="exportAll" size="small">
-          <v-icon start>mdi-download</v-icon>
-          Exportálás
+        <v-btn color="primary" class="me-2" @click="exportCSV" size="small">
+          <v-icon start>mdi-file-delimited</v-icon>
+          CSV Export
+        </v-btn>
+        <v-btn color="primary" @click="exportXLSX" size="small">
+          <v-icon start>mdi-file-excel</v-icon>
+          XLSX Export
         </v-btn>
       </div>
     </v-card-title>
@@ -94,8 +120,16 @@ onMounted(loadSubmissions)
         class="elevation-1 submission-table"
         dense
       >
+        <template v-slot:item.id="{ item }">
+          {{ item.id }}
+        </template>
+
         <template v-slot:item.created_at="{ item }">
           {{ new Date(item.created_at).toLocaleString() }}
+        </template>
+
+        <template v-slot:item.ip_address="{ item }">
+          {{ item.ip_address || 'ismeretlen' }}
         </template>
 
         <template v-slot:item.data="{ item }">

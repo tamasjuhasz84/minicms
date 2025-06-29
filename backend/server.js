@@ -43,9 +43,29 @@ db.serialize(() => {
     CREATE TABLE IF NOT EXISTS submissions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       data TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      ip_address TEXT
     )
   `);
+
+  // Biztonságos IP oszlop hozzáadás (csak ha nem létezik)
+  db.get("PRAGMA table_info(submissions)", (err, info) => {
+    if (err) return console.error("Nem sikerült ellenőrizni a sémát:", err);
+
+    db.all("PRAGMA table_info(submissions)", (err, columns) => {
+      if (err)
+        return console.error("Nem sikerült lekérdezni az oszlopokat:", err);
+
+      const hasIpColumn = columns.some((col) => col.name === "ip_address");
+      if (!hasIpColumn) {
+        db.run("ALTER TABLE submissions ADD COLUMN ip_address TEXT", (err) => {
+          if (err)
+            console.error("Nem sikerült az IP mező hozzáadása:", err.message);
+          else console.log("ip_address mező hozzáadva.");
+        });
+      }
+    });
+  });
 });
 
 // Middleware a JWT ellenőrzéséhez
@@ -136,11 +156,18 @@ app.get("/options", (req, res) => {
   res.json(options);
 });
 
-// Beküldés adatbázisba
+// Beküldés adatbázisba IP-vel
 app.post("/submit", (req, res) => {
   const submittedData = req.body;
-  const stmt = db.prepare("INSERT INTO submissions (data) VALUES (?)");
-  stmt.run(JSON.stringify(submittedData), (err) => {
+  const ip =
+    req.headers["x-forwarded-for"]?.split(",")[0] ||
+    req.socket?.remoteAddress ||
+    "ismeretlen";
+
+  const stmt = db.prepare(
+    "INSERT INTO submissions (data, ip_address) VALUES (?, ?)"
+  );
+  stmt.run(JSON.stringify(submittedData), ip, (err) => {
     if (err) {
       console.error("Hiba mentéskor:", err);
       return res.status(500).json({ success: false, message: "Mentési hiba." });
