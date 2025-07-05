@@ -1,3 +1,11 @@
+# [1.2.0](https://github.com/tamasjuhasz84/minicms/compare/v1.1.1...v1.2.0) (2025-07-05)
+
+
+### Features
+
+* add tests ([a5597fd](https://github.com/tamasjuhasz84/minicms/commit/a5597fd775b840f370f2dd4403d0785691fc04ea))
+* add tests ([317f1db](https://github.com/tamasjuhasz84/minicms/commit/317f1db75d2a7de82cc45a21a1c2d73571479966))
+
 ## [1.1.1](https://github.com/tamasjuhasz84/minicms/compare/v1.1.0...v1.1.1) (2025-07-05)
 
 
