@@ -1,17 +1,13 @@
 import express from "express";
 import {
-  getSubmissions,
   submitForm,
-  deleteSubmissionById,
-  deleteAll,
+  getSubmissions,
 } from "../controllers/submissionController.js";
-import { verifyToken } from "../middleware/verifyToken.js";
+import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/", verifyToken, getSubmissions);
-router.post("/", submitForm);
-router.delete("/:id", verifyToken, deleteSubmissionById);
-router.delete("/", verifyToken, deleteAll);
+router.post("/", submitForm); // POST /submit
+router.get("/", verifyToken, getSubmissions); // GET /submissions
 
 export default router;

@@ -38,7 +38,7 @@ app.use(
 );
 
 // Routes
-app.use("/submit", limiter); // limit csak a /submit POST-ra érvényes
+app.use("/submit", limiter, submissionRoutes);
 app.use("/submissions", submissionRoutes);
 app.use("/content", contentRoutes);
 app.use("/", authRoutes);
