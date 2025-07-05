@@ -1,15 +1,20 @@
-const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const sqlite3 = require("sqlite3").verbose();
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-require("dotenv").config();
-const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
+import express from "express";
+import fs from "fs";
+import path from "path";
+import cors from "cors";
+import bodyParser from "body-parser";
+import sqlite3 from "sqlite3";
+import * as bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
+dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 const CONTENT_PATH = path.join(__dirname, "data", "content.json");
@@ -17,17 +22,15 @@ const DB_PATH = path.join(__dirname, "data", "submissions.db");
 const ADMIN_USER = process.env.ADMIN_USER;
 const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
-
-app.use(helmet());
-app.use(bodyParser.json());
-
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   message: "Túl sok kérés érkezett. Kérlek, próbáld meg később.",
 });
-app.use("/submit", limiter);
 
+app.use(helmet());
+app.use(bodyParser.json());
+app.use("/submit", limiter);
 app.use(
   cors({
     origin: "*",
