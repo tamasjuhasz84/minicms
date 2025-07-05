@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/tamasjuhasz84/minicms/compare/v1.1.0...v1.1.1) (2025-07-05)
+
+
+### Bug Fixes
+
+* sql refactor ([d88d4ac](https://github.com/tamasjuhasz84/minicms/commit/d88d4ac5c055494e71aaa2709d66d6e12910237a))
+
 # [1.1.0](https://github.com/tamasjuhasz84/minicms/compare/v1.0.1...v1.1.0) (2025-07-05)
 
 
