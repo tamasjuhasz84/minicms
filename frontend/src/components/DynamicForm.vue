@@ -103,27 +103,56 @@ function getSelectItems(field) {
 function getValidationRules(field) {
   const rules = []
 
+  const isEmpty = (val) => val === '' || val === null || val === undefined
+
+  // Kötelező mező ellenőrzése
   if (field.required) {
-    rules.push((v) => (v !== null && v !== '') || 'Kötelező mező')
+    rules.push((v) => !isEmpty(v) || `${field.label} kötelező.`)
   }
 
-  if (field.type === 'number') {
-    if (field.validations?.min !== null) {
-      rules.push((v) => v >= field.validations.min || `Minimum érték: ${field.validations.min}`)
-    }
-    if (field.validations?.max !== null) {
-      rules.push((v) => v <= field.validations.max || `Maximum érték: ${field.validations.max}`)
-    }
-  }
+  // Minden egyéb validáció csak akkor fusson, ha nem üres (vagy ha kötelező)
+  rules.push((v) => {
+    if (!field.required && isEmpty(v)) return true
 
-  if (field.type === 'text' && field.validations?.pattern) {
-    try {
-      const regex = new RegExp(field.validations.pattern)
-      rules.push((v) => regex.test(v) || 'Hibás formátum')
-    } catch (e) {
-      console.warn('Hibás regex minta:', field.validations.pattern, e)
+    // Szám típus
+    if (field.type === 'number') {
+      const num = Number(v)
+      if (isNaN(num)) return `${field.label} nem érvényes szám.`
+      if (field.validations?.min != null && num < field.validations.min)
+        return `Minimum érték: ${field.validations.min}`
+      if (field.validations?.max != null && num > field.validations.max)
+        return `Maximum érték: ${field.validations.max}`
     }
-  }
+
+    // Szöveg típus
+    if (typeof v === 'string') {
+      if (field.validations?.min != null && v.length < field.validations.min)
+        return `Minimum ${field.validations.min} karakter.`
+      if (field.validations?.max != null && v.length > field.validations.max)
+        return `Maximum ${field.validations.max} karakter.`
+
+      if (field.validations?.pattern) {
+        try {
+          const regex = new RegExp(field.validations.pattern)
+          if (!regex.test(v)) return `Hibás formátum`
+        } catch (e) {
+          console.warn('Érvénytelen regex minta:', field.validations.pattern, e)
+        }
+      }
+
+      if (field.type === 'email') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(v)) return `Nem érvényes email.`
+      }
+
+      if (field.type === 'tel') {
+        const telRegex = /^[0-9+ ]{6,20}$/
+        if (!telRegex.test(v)) return `Nem érvényes telefonszám.`
+      }
+    }
+
+    return true
+  })
 
   return rules
 }

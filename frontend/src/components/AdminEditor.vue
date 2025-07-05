@@ -66,44 +66,41 @@ function saveContent() {
   const form = editableContent.value.form.map((f) => {
     const copy = { ...f }
 
-    if (f.type === 'select') {
-      if (f.sourceType === 'cms') {
-        try {
-          const parsed = JSON.parse(f.optionsText)
-          copy.options = f.optionsKey ? { [f.optionsKey]: parsed } : parsed
-        } catch (e) {
-          alert('Hibás JSON az opcióknál')
-          throw e
+    // Select mezők CMS-forrással → optionsText feldolgozás
+    if (f.type === 'select' && f.sourceType === 'cms') {
+      try {
+        copy.options = JSON.parse(f.optionsText || '[]')
+
+        if (!Array.isArray(copy.options)) {
+          throw new Error('Az options nem tömb!')
         }
-        delete copy.source
-        delete copy.sourceField
-      } else if (f.sourceType === 'api') {
-        copy.source = f.source
-        copy.sourceField = f.sourceField
-        delete copy.options
+      } catch (err) {
+        alert(`Hibás JSON az opcióknál: ${f.label || f.name || 'névtelen mező'}`)
+        throw err
       }
     }
 
-    delete copy.optionsText
-    delete copy.sourceType
-    delete copy.optionsKey
     return copy
   })
 
-  const payload = {
-    header: editableContent.value.header,
-    footer: editableContent.value.footer,
-    form,
-    styles: editableContent.value.styles,
-  }
-
   axios
-    .post('/content?api_key=secret', payload)
-    .then(() => {
-      alert('Mentés sikeres!')
-      emit('content-updated', payload)
+    .post('/content?api_key=secret', {
+      ...editableContent.value,
+      form,
     })
-    .catch(() => alert('Mentés sikertelen!'))
+    .then(() => {
+      alert('Sikeres mentés')
+
+      // ✨ Új tartalom emitálása a fő App.vue komponensnek
+      emit('content-updated', {
+        ...editableContent.value,
+        form,
+      })
+    })
+    .catch((err) => {
+      console.error('Mentési hiba:', err)
+      alert('Mentési hiba.')
+    })
 }
 
 onMounted(() => {

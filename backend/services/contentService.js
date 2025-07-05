@@ -27,6 +27,7 @@ export async function loadContent() {
       validations: field.validations ? JSON.parse(field.validations) : {},
       source: field.source,
       sourceField: field.sourceField,
+      options: field.options ? JSON.parse(field.options) : [], // <--- ÚJ
     })),
   };
 }
@@ -51,9 +52,9 @@ export async function saveContent(data) {
   const insertStmt = await db.prepare(`
     INSERT INTO content_fields (
       id, label, name, type, placeholder, enabled,
-      required, \`group\`, validations, source, sourceField, position
+      required, \`group\`, validations, source, sourceField, options, position
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   try {
@@ -71,6 +72,7 @@ export async function saveContent(data) {
         JSON.stringify(f.validations || {}),
         f.source || "",
         f.sourceField || "",
+        JSON.stringify(f.options || []), // <--- ÚJ
         index,
       );
     }

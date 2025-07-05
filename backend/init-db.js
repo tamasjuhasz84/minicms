@@ -8,7 +8,7 @@ await db.exec(`
     value TEXT
   );
 
- CREATE TABLE IF NOT EXISTS content_fields (
+  CREATE TABLE IF NOT EXISTS content_fields (
     id TEXT PRIMARY KEY,
     label TEXT NOT NULL,
     name TEXT,
@@ -20,6 +20,7 @@ await db.exec(`
     validations TEXT,
     source TEXT,
     sourceField TEXT,
+    options TEXT,
     position INTEGER
   );
 
@@ -31,4 +32,6 @@ await db.exec(`
   );
 `);
 
-console.log("Adatbázis inicializálva: content_meta + content_fields.");
+console.log(
+  "Adatbázis inicializálva: content_meta + content_fields + submissions.",
+);

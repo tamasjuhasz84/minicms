@@ -1,4 +1,6 @@
 import * as submissionService from "../services/submissionService.js";
+import { loadContent } from "../services/contentService.js";
+import { z } from "zod";
 
 export async function getSubmissions(req, res) {
   try {
@@ -12,11 +14,147 @@ export async function getSubmissions(req, res) {
 
 export async function submitForm(req, res) {
   try {
-    const form = req.body;
-    if (!form || Object.keys(form).length === 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Üres beküldés nem engedélyezett." });
+    const structure = await loadContent();
+    const schemaShape = {};
+
+    const isEmpty = (val) => val === undefined || val === null || val === "";
+
+    for (const field of structure.form) {
+      const isRequired = field.required === true;
+      let base;
+
+      switch (field.type) {
+        case "text":
+        case "select":
+          base = z.string();
+          break;
+
+        case "email":
+          base = z.string().email(`${field.label} nem érvényes email.`);
+          break;
+
+        case "number":
+          base = z.preprocess(
+            (val) => {
+              if (isEmpty(val)) return undefined;
+              const num = Number(val);
+              return isNaN(num) ? undefined : num;
+            },
+            isRequired ? z.number() : z.number().optional(),
+          );
+          break;
+
+        case "checkbox":
+        case "switch":
+          base = z.boolean();
+          break;
+
+        case "file":
+          base = z
+            .object({
+              name: z.string(),
+              size: z
+                .number()
+                .max(5 * 1024 * 1024, `${field.label} túl nagy fájl.`),
+              type: z.string(),
+              base64: z.string().startsWith("data:"),
+            })
+            .nullable();
+          if (isRequired) {
+            base = base.refine((val) => val !== null, {
+              message: `${field.label} kötelező fájl.`,
+            });
+          }
+          break;
+
+        case "tel":
+          base = z
+            .string()
+            .regex(
+              /^[0-9+ ]{6,20}$/,
+              `${field.label} nem érvényes telefonszám.`,
+            );
+          break;
+
+        default:
+          base = z.any();
+      }
+
+      if (!isRequired) {
+        base = base.optional();
+      }
+
+      // required validáció, ha nem file
+      if (isRequired && !["file"].includes(field.type)) {
+        base = base.refine((val) => !isEmpty(val), {
+          message: `${field.label} kötelező.`,
+        });
+      }
+
+      // MIN
+      if (field.validations?.min !== undefined) {
+        base = base.refine(
+          (val) => {
+            if (!isRequired && isEmpty(val)) return true;
+            if (field.type === "number") return val >= field.validations.min;
+            if (typeof val === "string")
+              return val.length >= field.validations.min;
+            return true;
+          },
+          {
+            message:
+              field.type === "number"
+                ? `${field.label} minimum értéke ${field.validations.min}.`
+                : `${field.label} minimum ${field.validations.min} karakter.`,
+          },
+        );
+      }
+
+      // MAX
+      if (field.validations?.max !== undefined) {
+        base = base.refine(
+          (val) => {
+            if (!isRequired && isEmpty(val)) return true;
+            if (field.type === "number") return val <= field.validations.max;
+            if (typeof val === "string")
+              return val.length <= field.validations.max;
+            return true;
+          },
+          {
+            message:
+              field.type === "number"
+                ? `${field.label} maximum értéke ${field.validations.max}.`
+                : `${field.label} maximum ${field.validations.max} karakter.`,
+          },
+        );
+      }
+
+      // REGEX
+      if (field.validations?.regex) {
+        base = base.refine(
+          (val) => {
+            if (!isRequired && isEmpty(val)) return true;
+            if (typeof val !== "string") return true;
+            return new RegExp(field.validations.regex).test(val);
+          },
+          {
+            message: `${field.label} formátuma hibás.`,
+          },
+        );
+      }
+
+      schemaShape[field.name] = base;
+    }
+
+    const validator = z.object(schemaShape);
+    const parsed = validator.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        error: "Validációs hiba",
+        details: parsed.error.flatten(),
+      });
     }
 
     const ip =
@@ -24,7 +162,7 @@ export async function submitForm(req, res) {
       req.socket?.remoteAddress ||
       "ismeretlen";
 
-    await submissionService.addSubmission(form, ip);
+    await submissionService.addSubmission(parsed.data, ip);
     res.json({ success: true, message: "Mentés sikeres." });
   } catch (err) {
     console.error("Mentési hiba:", err);
