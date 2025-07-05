@@ -2,10 +2,11 @@ name: Release – Frontend
 
 on:
   push:
+    branches: [master]
     paths:
       - "frontend/**"
-    branches:
-      - master
+      - "frontend/.releaserc"
+      - "frontend/release.config.js"
 
 jobs:
   release-frontend:

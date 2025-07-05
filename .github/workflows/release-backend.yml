@@ -3,7 +3,10 @@ name: Release – Backend
 on:
   push:
     paths:
-      - 'backend/**'
+      - "backend/**"
+      - "backend/.releaserc"
+      - "backend/release.config.js"
+
     branches:
       - master
 
