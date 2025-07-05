@@ -1,25 +1,31 @@
-import * as contentService from "../services/contentService.js";
+import {
+  loadContent,
+  saveContent as saveContentToDb,
+  isValidContent,
+} from "../services/contentService.js";
 
 export async function getContent(req, res) {
   try {
-    const content = await contentService.loadContent();
-    res.json(content);
+    const data = await loadContent();
+    res.json(data);
   } catch (err) {
-    console.error("Hiba tartalom lekérésekor:", err);
-    res.status(500).json({ error: "Nem sikerült betölteni a tartalmat." });
+    console.error("Hiba a tartalom betöltésekor:", err);
+    res.status(500).json({ error: "Hiba a tartalom betöltésekor." });
   }
 }
 
 export async function saveContent(req, res) {
   try {
-    if (!contentService.isValidContent(req.body)) {
-      return res.status(400).json({ error: "Érvénytelen tartalomstruktúra" });
+    const content = req.body;
+
+    if (!isValidContent(content)) {
+      return res.status(400).json({ error: "Érvénytelen űrlap struktúra." });
     }
 
-    await contentService.saveContent(req.body);
-    res.json({ message: "A tartalom frissítve lett." });
+    await saveContentToDb(content);
+    res.status(200).json({ success: true });
   } catch (err) {
-    console.error("Hiba mentéskor:", err);
-    res.status(500).json({ error: "Nem sikerült menteni a tartalmat" });
+    console.error("Hiba a tartalom mentésekor:", err);
+    res.status(500).json({ error: "Hiba a tartalom mentésekor." });
   }
 }
