@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   branches: ["master"],
   tagFormat: "backend-v${version}",
   plugins: [
