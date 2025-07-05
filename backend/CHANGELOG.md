@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/tamasjuhasz84/minicms/compare/v1.2.0...v1.2.1) (2025-07-05)
+
+
+### Bug Fixes
+
+* add forontend tests ([268d708](https://github.com/tamasjuhasz84/minicms/commit/268d7080e6429cfd3900f61dc529a7584bb5b262))
+
 # [1.2.0](https://github.com/tamasjuhasz84/minicms/compare/v1.1.1...v1.2.0) (2025-07-05)
 
 
