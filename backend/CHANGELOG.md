@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/tamasjuhasz84/minicms/compare/v1.2.1...v1.2.2) (2025-07-05)
+
+
+### Bug Fixes
+
+* format ([955e085](https://github.com/tamasjuhasz84/minicms/commit/955e085a8fbc7daefdf3296eb6242540e72f679b))
+
 ## [1.2.1](https://github.com/tamasjuhasz84/minicms/compare/v1.2.0...v1.2.1) (2025-07-05)
 
 
