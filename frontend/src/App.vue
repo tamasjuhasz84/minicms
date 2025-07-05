@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useTheme } from 'vuetify'
-import axios from 'axios'
+import axios from '@/utils/axios'
 import DynamicForm from './components/DynamicForm.vue'
 import AdminEditor from './components/AdminEditor.vue'
 

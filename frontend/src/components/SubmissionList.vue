@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import axios from '@/utils/axios'
 import * as XLSX from 'xlsx'
 import './SubmissionList.scss'
 
@@ -14,21 +14,35 @@ const headers = ref([
   { text: 'Műveletek', value: 'actions', sortable: false },
 ])
 
+function handleAuthError(error) {
+  if (error.response?.status === 403) {
+    alert('A munkamenet lejárt. Kérlek, jelentkezz be újra.')
+    localStorage.removeItem('jwt')
+    window.location.href = '/admin'
+  } else {
+    alert('Hiba történt a lekérdezés során.')
+    console.error(error)
+  }
+}
+
 function loadSubmissions() {
-  axios.get('/submissions').then((res) => {
-    submissions.value = res.data
-  })
+  axios
+    .get('/submissions')
+    .then((res) => {
+      submissions.value = res.data
+    })
+    .catch(handleAuthError)
 }
 
 function deleteOne(id) {
   if (confirm('Biztosan törlöd ezt a rekordot?')) {
-    axios.delete(`/submissions/${id}`).then(loadSubmissions)
+    axios.delete(`/submissions/${id}`).then(loadSubmissions).catch(handleAuthError)
   }
 }
 
 function deleteAll() {
   if (confirm('Biztosan törlöd az összes beküldést?')) {
-    axios.delete('/submissions').then(loadSubmissions)
+    axios.delete('/submissions').then(loadSubmissions).catch(handleAuthError)
   }
 }
 
@@ -45,49 +59,52 @@ function getExportRows(data) {
 }
 
 function exportCSV() {
-  axios.get('/submissions').then((res) => {
-    const rows = getExportRows(res.data)
+  axios
+    .get('/submissions')
+    .then((res) => {
+      const rows = getExportRows(res.data)
+      if (!rows.length) {
+        alert('Nincs mit exportálni.')
+        return
+      }
 
-    if (!rows.length) {
-      alert('Nincs mit exportálni.')
-      return
-    }
+      const headers = Object.keys(rows[0])
+      const csv = [
+        headers.join(','),
+        ...rows.map((row) =>
+          headers.map((h) => `"${(row[h] ?? '').toString().replace(/"/g, '""')}"`).join(','),
+        ),
+      ].join('\n')
 
-    const headers = Object.keys(rows[0])
-    const csv = [
-      headers.join(','), // fejléc
-      ...rows.map((row) =>
-        headers.map((h) => `"${(row[h] ?? '').toString().replace(/"/g, '""')}"`).join(','),
-      ),
-    ].join('\n')
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', 'submissions_export.csv')
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  })
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', 'submissions_export.csv')
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    })
+    .catch(handleAuthError)
 }
 
 function exportXLSX() {
-  axios.get('/submissions').then((res) => {
-    const rows = getExportRows(res.data)
+  axios
+    .get('/submissions')
+    .then((res) => {
+      const rows = getExportRows(res.data)
+      if (!rows.length) {
+        alert('Nincs mit exportálni.')
+        return
+      }
 
-    if (!rows.length) {
-      alert('Nincs mit exportálni.')
-      return
-    }
-
-    const worksheet = XLSX.utils.json_to_sheet(rows)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Beküldések')
-
-    XLSX.writeFile(workbook, 'submissions_export.xlsx')
-  })
+      const worksheet = XLSX.utils.json_to_sheet(rows)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Beküldések')
+      XLSX.writeFile(workbook, 'submissions_export.xlsx')
+    })
+    .catch(handleAuthError)
 }
 
 onMounted(loadSubmissions)

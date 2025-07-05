@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import axios from 'axios'
+import axios from '@/utils/axios'
 import { v4 as uuidv4 } from 'uuid'
 import './DynamicForm.scss'
 
