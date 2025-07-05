@@ -1,16 +1,14 @@
 ## [1.2.2](https://github.com/tamasjuhasz84/minicms/compare/v1.2.1...v1.2.2) (2025-07-05)
 
-
 ### Bug Fixes
 
-* format ([955e085](https://github.com/tamasjuhasz84/minicms/commit/955e085a8fbc7daefdf3296eb6242540e72f679b))
+- format ([955e085](https://github.com/tamasjuhasz84/minicms/commit/955e085a8fbc7daefdf3296eb6242540e72f679b))
 
 ## [1.2.1](https://github.com/tamasjuhasz84/minicms/compare/v1.2.0...v1.2.1) (2025-07-05)
 
-
 ### Bug Fixes
 
-* add forontend tests ([268d708](https://github.com/tamasjuhasz84/minicms/commit/268d7080e6429cfd3900f61dc529a7584bb5b262))
+- add forontend tests ([268d708](https://github.com/tamasjuhasz84/minicms/commit/268d7080e6429cfd3900f61dc529a7584bb5b262))
 
 # [1.2.0](https://github.com/tamasjuhasz84/minicms/compare/v1.1.1...v1.2.0) (2025-07-05)
 

@@ -10,6 +10,7 @@
     "lint": "run-s lint:*",
     "lint:eslint": "eslint . --fix",
     "lint:oxlint": "oxlint . --fix -D correctness --ignore-path .gitignore",
+    "format": "prettier --write .",
     "test": "vitest",
     "test:ui": "vitest --ui"
   },
