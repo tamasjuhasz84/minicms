@@ -137,23 +137,23 @@ onMounted(loadSubmissions)
         class="elevation-1 submission-table"
         dense
       >
-        <template v-slot:item.id="{ item }">
+        <template v-slot:[`item.id`]="{ item }">
           {{ item.id }}
         </template>
 
-        <template v-slot:item.created_at="{ item }">
+        <template v-slot:[`item.created_at`]="{ item }">
           {{ new Date(item.created_at).toLocaleString() }}
         </template>
 
-        <template v-slot:item.ip_address="{ item }">
+        <template v-slot:[`item.ip_address`]="{ item }">
           {{ item.ip_address || 'ismeretlen' }}
         </template>
 
-        <template v-slot:item.data="{ item }">
+        <template v-slot:[`item.data`]="{ item }">
           <pre>{{ JSON.parse(item.data) }}</pre>
         </template>
 
-        <template v-slot:item.actions="{ item }">
+        <template v-slot:[`item.actions`]="{ item }">
           <v-btn color="error" size="small" @click="deleteOne(item.id)">
             <v-icon start>mdi-delete</v-icon>
             Törlés

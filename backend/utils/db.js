@@ -14,4 +14,3 @@ export async function getDb() {
     driver: sqlite3.Database,
   });
 }
-

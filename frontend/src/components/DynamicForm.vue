@@ -25,16 +25,12 @@ const showLogin = ref(false)
 const authenticated = ref(false)
 const loginForm = ref({ username: '', password: '' })
 const errorMessages = ref([])
-const fieldMap = ref([])
 
 const enabledFields = computed(() => {
   if (!Array.isArray(props.formFields)) return []
-
-  fieldMap.value = props.formFields
+  return props.formFields
     .filter((f) => f.enabled !== false)
     .map((field) => ({ ...field, uuid: uuidv4() }))
-
-  return fieldMap.value
 })
 
 watch(
@@ -125,7 +121,7 @@ function getValidationRules(field) {
       const regex = new RegExp(field.validations.pattern)
       rules.push((v) => regex.test(v) || 'Hibás formátum')
     } catch (e) {
-      console.warn('Hibás regex minta:', field.validations.pattern)
+      console.warn('Hibás regex minta:', field.validations.pattern, e)
     }
   }
 
@@ -171,15 +167,6 @@ function login() {
       }
     })
     .catch(() => alert('Hibás bejelentkezési adatok.'))
-}
-
-function logout() {
-  authenticated.value = false
-  showLogin.value = false
-  loginForm.value.username = ''
-  loginForm.value.password = ''
-  localStorage.removeItem('jwt')
-  delete axios.defaults.headers.common['Authorization']
 }
 </script>
 

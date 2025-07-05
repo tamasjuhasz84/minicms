@@ -54,7 +54,11 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Backend fut: http://localhost:${PORT}`);
-});
+// Csak akkor indítsa el a szervert, ha nem tesztelünk
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`Backend fut: http://localhost:${PORT}`);
+  });
+}
+
+export default app;
