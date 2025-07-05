@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/tamasjuhasz84/minicms/compare/v1.0.1...v1.1.0) (2025-07-05)
+
+
+### Features
+
+* change arhitecture ([d3f1b11](https://github.com/tamasjuhasz84/minicms/commit/d3f1b1186dadc36692a5af32d8834deee5f1aaaa))
+
 # 1.0.0 (2025-07-05)
 
 
