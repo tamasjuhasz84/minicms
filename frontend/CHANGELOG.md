@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/tamasjuhasz84/minicms/compare/v1.2.4...v1.2.5) (2025-07-05)
+
+
+### Bug Fixes
+
+* **frontend:** test changelog separation ([6609df3](https://github.com/tamasjuhasz84/minicms/commit/6609df38aeca3d01a069f08b339853fbd238eeb5))
+
 ## [1.0.1](https://github.com/tamasjuhasz84/minicms/compare/v1.0.0...v1.0.1) (2025-07-05)
 
 ### Bug Fixes
