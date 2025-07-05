@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/tamasjuhasz84/minicms/compare/backend-v1.0.0...backend-v1.0.1) (2025-07-05)
+
+
+### Bug Fixes
+
+* **frontend,backend:** add validation ([486e016](https://github.com/tamasjuhasz84/minicms/commit/486e016c751cb65dd68157e3b294fe898344d4b9))
+
 # 1.0.0 (2025-07-05)
 
 ### Bug Fixes
