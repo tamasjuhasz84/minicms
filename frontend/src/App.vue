@@ -16,7 +16,7 @@ const loginForm = ref({
 const formFields = ref([])
 const initialContent = ref(null)
 
-// Sötét mód állapot
+// Sötét és világos mód
 const isDarkMode = ref(localStorage.getItem('darkMode') === 'true')
 const theme = useTheme()
 
