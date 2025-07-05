@@ -24,60 +24,60 @@ export async function submitForm(req, res) {
       let base;
 
       switch (field.type) {
-        case "text":
-        case "select":
-          base = z.string();
-          break;
+      case "text":
+      case "select":
+        base = z.string();
+        break;
 
-        case "email":
-          base = z.string().email(`${field.label} nem érvényes email.`);
-          break;
+      case "email":
+        base = z.string().email(`${field.label} nem érvényes email.`);
+        break;
 
-        case "number":
-          base = z.preprocess(
-            (val) => {
-              if (isEmpty(val)) return undefined;
-              const num = Number(val);
-              return isNaN(num) ? undefined : num;
-            },
-            isRequired ? z.number() : z.number().optional(),
+      case "number":
+        base = z.preprocess(
+          (val) => {
+            if (isEmpty(val)) return undefined;
+            const num = Number(val);
+            return isNaN(num) ? undefined : num;
+          },
+          isRequired ? z.number() : z.number().optional(),
+        );
+        break;
+
+      case "checkbox":
+      case "switch":
+        base = z.boolean();
+        break;
+
+      case "file":
+        base = z
+          .object({
+            name: z.string(),
+            size: z
+              .number()
+              .max(5 * 1024 * 1024, `${field.label} túl nagy fájl.`),
+            type: z.string(),
+            base64: z.string().startsWith("data:"),
+          })
+          .nullable();
+        if (isRequired) {
+          base = base.refine((val) => val !== null, {
+            message: `${field.label} kötelező fájl.`,
+          });
+        }
+        break;
+
+      case "tel":
+        base = z
+          .string()
+          .regex(
+            /^[0-9+ ]{6,20}$/,
+            `${field.label} nem érvényes telefonszám.`,
           );
-          break;
+        break;
 
-        case "checkbox":
-        case "switch":
-          base = z.boolean();
-          break;
-
-        case "file":
-          base = z
-            .object({
-              name: z.string(),
-              size: z
-                .number()
-                .max(5 * 1024 * 1024, `${field.label} túl nagy fájl.`),
-              type: z.string(),
-              base64: z.string().startsWith("data:"),
-            })
-            .nullable();
-          if (isRequired) {
-            base = base.refine((val) => val !== null, {
-              message: `${field.label} kötelező fájl.`,
-            });
-          }
-          break;
-
-        case "tel":
-          base = z
-            .string()
-            .regex(
-              /^[0-9+ ]{6,20}$/,
-              `${field.label} nem érvényes telefonszám.`,
-            );
-          break;
-
-        default:
-          base = z.any();
+      default:
+        base = z.any();
       }
 
       if (!isRequired) {
