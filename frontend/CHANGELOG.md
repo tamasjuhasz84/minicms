@@ -1,3 +1,10 @@
+## [1.2.6](https://github.com/tamasjuhasz84/minicms/compare/v1.2.5...v1.2.6) (2025-07-05)
+
+
+### Bug Fixes
+
+* **frontend,backend:** modify changelog ([6f36350](https://github.com/tamasjuhasz84/minicms/commit/6f36350e3af125f809adbafae6525c3b1f6fe002))
+
 ## [1.2.5](https://github.com/tamasjuhasz84/minicms/compare/v1.2.4...v1.2.5) (2025-07-05)
 
 ### Bug Fixes
