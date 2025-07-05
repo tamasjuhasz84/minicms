@@ -13,11 +13,31 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/content': 'http://localhost:3000',
-      '/submit': 'http://localhost:3000',
-      '/options': 'http://localhost:3000',
-      '/login': 'http://localhost:3000',
-      '/submissions': 'http://localhost:3000',
+      '/content': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/submit': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/options': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/login': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/submissions': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   preview: {

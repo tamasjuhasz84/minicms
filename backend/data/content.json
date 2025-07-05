@@ -1,6 +1,6 @@
 {
   "header": {
-    "title": "Ez itt egy fejléc",
+    "title": "Ez itt egy módosított fejléc",
     "image": "/header.jpg"
   },
   "footer": {
@@ -44,24 +44,6 @@
       "sourceField": ""
     },
     {
-      "id": "b68d4afd-d93f-4993-a132-8bb872d6b98b",
-      "label": "szoveg",
-      "name": "szoveg",
-      "type": "text",
-      "placeholder": "szoveg",
-      "enabled": true,
-      "required": false,
-      "group": "",
-      "validations": {
-        "min": null,
-        "max": null,
-        "pattern": "^[A-Za-z0-9]+$",
-        "maxFileSize": null
-      },
-      "source": "",
-      "sourceField": ""
-    },
-    {
       "id": "60c882e0-92ad-4fa4-8a2e-344a9eef05be",
       "label": "Másik szám",
       "name": "szam2123",
@@ -74,6 +56,24 @@
         "min": 20,
         "max": 300,
         "pattern": "",
+        "maxFileSize": null
+      },
+      "source": "",
+      "sourceField": ""
+    },
+    {
+      "id": "b68d4afd-d93f-4993-a132-8bb872d6b98b",
+      "label": "szoveg",
+      "name": "szoveg",
+      "type": "text",
+      "placeholder": "szoveg",
+      "enabled": true,
+      "required": false,
+      "group": "",
+      "validations": {
+        "min": null,
+        "max": null,
+        "pattern": "^[A-Za-z0-9]+$",
         "maxFileSize": null
       },
       "source": "",
@@ -131,7 +131,7 @@
     }
   ],
   "styles": {
-    "color": "#78D219",
+    "color": "#D24E19",
     "fontSize": "15px",
     "buttonLabel": "Beküldés",
     "labelFontSize": "15px",
@@ -139,6 +139,6 @@
     "inputFontSize": "15px",
     "buttonFontSize": "15px",
     "fontFamily": "Arial",
-    "backgroundColor": "#1B9192"
+    "backgroundColor": "#921B91"
   }
 }
