@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  backend-lint-and-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Kód letöltése
+        uses: actions/checkout@v4
+
+      - name: Node.js környezet beállítása
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Függőségek telepítése
+        run: npm ci
+
+      - name: ESLint futtatása
+        run: npm run lint
+
+      - name: Tesztek futtatása (Vitest)
+        run: npm test
