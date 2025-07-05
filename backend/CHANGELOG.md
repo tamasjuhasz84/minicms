@@ -1,16 +1,14 @@
 ## [1.2.4](https://github.com/tamasjuhasz84/minicms/compare/v1.2.3...v1.2.4) (2025-07-05)
 
-
 ### Bug Fixes
 
-* **backend:** change workflow ([9a6af2f](https://github.com/tamasjuhasz84/minicms/commit/9a6af2f0500943baac8f03fc0cc4312d8d5a133c))
+- **backend:** change workflow ([9a6af2f](https://github.com/tamasjuhasz84/minicms/commit/9a6af2f0500943baac8f03fc0cc4312d8d5a133c))
 
 ## [1.2.3](https://github.com/tamasjuhasz84/minicms/compare/v1.2.2...v1.2.3) (2025-07-05)
 
-
 ### Bug Fixes
 
-* **frontend:** change workflow ([1d28217](https://github.com/tamasjuhasz84/minicms/commit/1d28217b1bba0754819eb82957b00745b337e8c5))
+- **frontend:** change workflow ([1d28217](https://github.com/tamasjuhasz84/minicms/commit/1d28217b1bba0754819eb82957b00745b337e8c5))
 
 ## [1.2.2](https://github.com/tamasjuhasz84/minicms/compare/v1.2.1...v1.2.2) (2025-07-05)
 
