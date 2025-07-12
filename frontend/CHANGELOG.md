@@ -1,3 +1,11 @@
+## [1.2.8](https://github.com/tamasjuhasz84/minicms/compare/v1.2.7...v1.2.8) (2025-07-12)
+
+
+### Bug Fixes
+
+* **backend, frontend:** fix admin ([04c6780](https://github.com/tamasjuhasz84/minicms/commit/04c6780b20e5c084c6f558800f75fc91a39d7121))
+* **backend:** package-json ([b562843](https://github.com/tamasjuhasz84/minicms/commit/b562843383a33be13a36239809342b8a5f141432))
+
 ## [1.2.7](https://github.com/tamasjuhasz84/minicms/compare/v1.2.6...v1.2.7) (2025-07-12)
 
 
