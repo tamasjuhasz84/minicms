@@ -85,37 +85,39 @@ export async function submitForm(req, res) {
       }
 
       // MIN
-      if (field.validations?.min !== undefined) {
+      const minVal = field.validations?.min;
+      if (minVal !== undefined && minVal !== null && minVal !== "") {
         base = base.refine(
           (val) => {
             if (!isRequired && isEmpty(val)) return true;
-            if (field.type === "number") return val >= field.validations.min;
-            if (typeof val === "string") return val.length >= field.validations.min;
+            if (field.type === "number") return val >= minVal;
+            if (typeof val === "string") return val.length >= minVal;
             return true;
           },
           {
             message:
               field.type === "number"
-                ? `${field.label} minimum értéke ${field.validations.min}.`
-                : `${field.label} minimum ${field.validations.min} karakter.`,
+                ? `${field.label} minimum értéke ${minVal}.`
+                : `${field.label} minimum ${minVal} karakter.`,
           },
         );
       }
 
       // MAX
-      if (field.validations?.max !== undefined) {
+      const maxVal = field.validations?.max;
+      if (maxVal !== undefined && maxVal !== null && maxVal !== "") {
         base = base.refine(
           (val) => {
             if (!isRequired && isEmpty(val)) return true;
-            if (field.type === "number") return val <= field.validations.max;
-            if (typeof val === "string") return val.length <= field.validations.max;
+            if (field.type === "number") return val <= maxVal;
+            if (typeof val === "string") return val.length <= maxVal;
             return true;
           },
           {
             message:
               field.type === "number"
-                ? `${field.label} maximum értéke ${field.validations.max}.`
-                : `${field.label} maximum ${field.validations.max} karakter.`,
+                ? `${field.label} maximum értéke ${maxVal}.`
+                : `${field.label} maximum ${maxVal} karakter.`,
           },
         );
       }

@@ -16,12 +16,12 @@ await db.exec(`
     placeholder TEXT,
     enabled INTEGER DEFAULT 1,
     required INTEGER DEFAULT 0,
-    \`group\` TEXT,
     validations TEXT,
     source TEXT,
     sourceField TEXT,
     options TEXT,
-    position INTEGER
+    position INTEGER,
+    sourceType TEXT
   );
 
   CREATE TABLE IF NOT EXISTS submissions (

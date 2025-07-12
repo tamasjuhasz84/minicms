@@ -71,9 +71,14 @@ function loadSelects() {
       .then((res) => {
         let options = [];
 
-        if (field.sourceField && Array.isArray(res.data[field.sourceField])) {
+        if (Array.isArray(res.data)) {
+          // Közvetlen tömb válasz
+          options = res.data;
+        } else if (field.sourceField && Array.isArray(res.data[field.sourceField])) {
+          // Ha megadott mezőn belül van a tömb
           options = res.data[field.sourceField];
         } else if (typeof res.data === "object") {
+          // Egyéb objektum: keressünk tömböt benne
           const values = Object.values(res.data);
           options = values.find((v) => Array.isArray(v)) || [];
         }
@@ -87,17 +92,27 @@ function loadSelects() {
 }
 
 function getSelectItems(field) {
-  if (Array.isArray(field.options)) {
+  // 1. CMS-opciók
+  if (Array.isArray(field.options) && field.options.length > 0) {
     return field.options.map((opt) => ({ text: opt.text, value: opt.value }));
   }
+
+  // 2. Mentett options objektumból
   if (typeof field.options === "object" && field.options !== null) {
     const array = Object.values(field.options).find((v) => Array.isArray(v));
     if (array) {
       return array.map((opt) => ({ text: opt.text, value: opt.value }));
     }
   }
+
+  // 3. API-ból töltött értékek
   const data = selectOptions.value[field.name];
-  return Array.isArray(data) ? data : [];
+  if (Array.isArray(data)) {
+    return data.map((opt) => ({ text: opt.text, value: opt.value }));
+  }
+
+  // 4. Semmi
+  return [];
 }
 
 function getValidationRules(field) {
@@ -176,7 +191,19 @@ async function submitForm() {
   axios
     .post("/submit", { ...formData.value })
     .then(() => alert("Sikeres beküldés!"))
-    .catch(() => alert("Hiba a beküldés során."));
+    .catch((err) => {
+      console.error("Beküldési hiba:", err.response?.data || err);
+
+      const fieldErrors = err.response?.data?.details?.fieldErrors;
+      if (fieldErrors) {
+        // Összefűzzük a hibaüzeneteket szöveggé
+        errorMessages.value = Object.entries(fieldErrors).flatMap(([field, messages]) =>
+          messages.map((msg) => `${field}: ${msg}`),
+        );
+      } else {
+        errorMessages.value.push("Ismeretlen hiba történt a beküldéskor.");
+      }
+    });
 }
 
 function login() {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import axios from "@/utils/axios";
 import draggable from "vuedraggable";
 import { v4 as uuidv4 } from "uuid";
@@ -13,6 +13,7 @@ const props = defineProps({
 const emit = defineEmits(["content-updated"]);
 
 const tab = ref(0);
+const expandedFields = ref(new Set());
 
 const editableContent = ref({
   header: { title: "", image: "" },
@@ -29,16 +30,36 @@ const editableContent = ref({
   },
 });
 
+function toggleExpand(id) {
+  if (expandedFields.value.has(id)) {
+    expandedFields.value.delete(id);
+  } else {
+    expandedFields.value.add(id);
+  }
+}
+
+function isExpanded(id) {
+  return expandedFields.value.has(id);
+}
+
+function generateName(label) {
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 30);
+}
+
 function addField() {
+  const id = uuidv4();
   editableContent.value.form.push({
-    id: uuidv4(),
+    id,
     label: "",
     name: "",
     type: "text",
     placeholder: "",
     enabled: true,
     required: false,
-    group: "",
     validations: {
       min: null,
       max: null,
@@ -47,7 +68,6 @@ function addField() {
     },
     sourceType: "cms",
     optionsText: "",
-    optionsKey: "",
     source: "",
     sourceField: "",
   });
@@ -66,17 +86,22 @@ function saveContent() {
   const form = editableContent.value.form.map((f) => {
     const copy = { ...f };
 
-    // Select mezők CMS-forrással → optionsText feldolgozás
-    if (f.type === "select" && f.sourceType === "cms") {
-      try {
-        copy.options = JSON.parse(f.optionsText || "[]");
+    if (!copy.name && copy.label) {
+      copy.name = generateName(copy.label);
+    }
 
-        if (!Array.isArray(copy.options)) {
-          throw new Error("Az options nem tömb!");
+    if (f.type === "select") {
+      if (f.sourceType === "cms") {
+        try {
+          copy.options = JSON.parse(f.optionsText || "[]");
+          copy.source = "";
+        } catch (err) {
+          alert(`Hibás JSON az opcióknál: ${f.label || f.name}`);
+          throw err;
         }
-      } catch (err) {
-        alert(`Hibás JSON az opcióknál: ${f.label || f.name || "névtelen mező"}`);
-        throw err;
+      } else if (f.sourceType === "api") {
+        copy.options = [];
+        copy.source = f.source || "";
       }
     }
 
@@ -90,8 +115,6 @@ function saveContent() {
     })
     .then(() => {
       alert("Sikeres mentés");
-
-      // ✨ Új tartalom emitálása a fő App.vue komponensnek
       emit("content-updated", {
         ...editableContent.value,
         form,
@@ -122,12 +145,11 @@ onMounted(() => {
       const field = {
         id: f.id || uuidv4(),
         label: f.label || "",
-        name: f.name || "",
+        name: f.name || generateName(f.label || ""),
         type: f.type || "text",
         placeholder: f.placeholder || "",
         enabled: typeof f.enabled === "undefined" ? true : f.enabled,
         required: f.required || false,
-        group: f.group || "",
         validations: f.validations || {
           min: null,
           max: null,
@@ -135,24 +157,21 @@ onMounted(() => {
           maxFileSize: null,
         },
         optionsText: "",
-        optionsKey: f.optionsKey || "",
         sourceType: "",
         source: f.source || "",
         sourceField: f.sourceField || "",
       };
 
       if (f.type === "select") {
-        if (Array.isArray(f.options)) {
-          field.optionsText = JSON.stringify(f.options, null, 2);
-          field.sourceType = "cms";
-        } else if (typeof f.options === "object" && f.options !== null) {
-          const key = Object.keys(f.options).find((k) => Array.isArray(f.options[k]));
-          const array = key ? f.options[key] : [];
-          field.optionsKey = key || "";
-          field.optionsText = JSON.stringify(array, null, 2);
-          field.sourceType = "cms";
-        } else if (f.source) {
+        if (f.source && typeof f.source === "string" && f.source.trim() !== "") {
           field.sourceType = "api";
+          field.optionsText = "";
+        } else if (Array.isArray(f.options)) {
+          field.sourceType = "cms";
+          field.optionsText = JSON.stringify(f.options, null, 2);
+        } else {
+          field.sourceType = "cms"; // fallback
+          field.optionsText = "[]";
         }
       }
 
@@ -161,7 +180,7 @@ onMounted(() => {
 
     editableContent.value = {
       header: content.header || { title: "", image: "" },
-      footer: { title: "", text: "" },
+      footer: content.footer || { title: "", text: "" },
       form: content.form,
       styles: content.styles || {
         color: "#1976d2",
@@ -187,35 +206,23 @@ onMounted(() => {
     <v-window v-model="tab">
       <v-window-item :value="0">
         <v-form @submit.prevent="saveContent">
-          <!-- Fejléc -->
           <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-2">Fejléc</h3>
             <v-text-field label="Cím" v-model="editableContent.header.title" />
             <v-text-field label="Kép URL" v-model="editableContent.header.image" />
           </v-card>
 
-          <!-- Lábléc -->
           <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-2">Lábléc</h3>
             <v-text-field label="Cím" v-model="editableContent.footer.title" />
             <v-text-field label="Szöveg" v-model="editableContent.footer.text" />
           </v-card>
 
-          <!-- Stílusok -->
           <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-2">Stílusok</h3>
-            <v-text-field
-              label="Label méret (pl. 13px)"
-              v-model="editableContent.styles.labelFontSize"
-            />
-            <v-text-field
-              label="Tartalom méret (pl. 14px)"
-              v-model="editableContent.styles.inputFontSize"
-            />
-            <v-text-field
-              label="Betűtípus (pl. Roboto, Arial)"
-              v-model="editableContent.styles.fontFamily"
-            />
+            <v-text-field label="Label méret" v-model="editableContent.styles.labelFontSize" />
+            <v-text-field label="Tartalom méret" v-model="editableContent.styles.inputFontSize" />
+            <v-text-field label="Betűtípus" v-model="editableContent.styles.fontFamily" />
             <div class="mb-2">
               <div class="text-caption font-weight-medium mb-1">Mező háttérszíne</div>
               <v-color-picker
@@ -229,7 +236,7 @@ onMounted(() => {
               />
             </div>
             <v-text-field
-              label="Gomb szövegméret (pl. 16px)"
+              label="Gomb szövegméret"
               v-model="editableContent.styles.buttonFontSize"
             />
             <v-text-field label="Gomb felirat" v-model="editableContent.styles.buttonLabel" />
@@ -247,7 +254,6 @@ onMounted(() => {
             </div>
           </v-card>
 
-          <!-- Mezők -->
           <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-4">Űrlap mezők</h3>
             <v-btn color="success" class="mb-4" @click="addField">Új mező hozzáadása</v-btn>
@@ -267,174 +273,104 @@ onMounted(() => {
             >
               <template #item="{ element: field, index: i }">
                 <v-card class="pa-4 mb-4 draggable-card">
-                  <div class="d-flex align-center justify-space-between mb-3">
-                    <strong>{{ field.label || "Új mező" }}</strong>
+                  <div class="d-flex align-center justify-space-between mb-2">
+                    <div
+                      @click="toggleExpand(field.id)"
+                      class="cursor-pointer flex-grow-1 d-flex align-center"
+                    >
+                      <v-icon
+                        :icon="isExpanded(field.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'"
+                        size="18"
+                        class="mr-2"
+                      />
+                      <strong>{{ field.label || "Új mező" }}</strong>
+                      <span class="text-caption ml-2">({{ field.type }})</span>
+                    </div>
                     <span class="drag-icon">☰</span>
                   </div>
 
-                  <v-text-field
-                    label="Címke"
-                    v-model="field.label"
-                    class="mb-2"
-                    hint="Mező feliratként jelenik meg."
-                    persistent-hint
-                  />
+                  <v-expand-transition>
+                    <div v-show="isExpanded(field.id)">
+                      <v-text-field label="Címke" v-model="field.label" class="mb-2" />
+                      <v-select
+                        :items="['text', 'number', 'select', 'switch', 'file']"
+                        label="Típus"
+                        v-model="field.type"
+                        class="mb-2"
+                      />
+                      <v-text-field label="Placeholder" v-model="field.placeholder" class="mb-2" />
+                      <v-switch v-model="field.enabled" label="Engedélyezve" class="mb-2" />
+                      <v-switch v-model="field.required" label="Kötelező" class="mb-2" />
 
-                  <v-select
-                    :items="['text', 'number', 'select', 'switch', 'file']"
-                    label="Típus"
-                    v-model="field.type"
-                    class="mb-2"
-                    hint="A mező típusa (pl. szöveg, szám, választólista, stb.)"
-                    persistent-hint
-                  />
+                      <v-text-field
+                        v-if="['text', 'number'].includes(field.type)"
+                        label="Minimum"
+                        v-model.number="field.validations.min"
+                        type="number"
+                        class="mb-2"
+                      />
+                      <v-text-field
+                        v-if="['text', 'number'].includes(field.type)"
+                        label="Maximum"
+                        v-model.number="field.validations.max"
+                        type="number"
+                        class="mb-2"
+                      />
 
-                  <v-text-field
-                    label="Név"
-                    v-model="field.name"
-                    class="mb-2"
-                    hint="Belső azonosító. Csak betű, szám, kötőjel és aláhúzás használható."
-                    persistent-hint
-                  />
+                      <v-text-field
+                        v-if="field.type === 'text'"
+                        label="Regex minta"
+                        v-model="field.validations.pattern"
+                        class="mb-2"
+                      />
 
-                  <v-text-field
-                    label="Placeholder"
-                    v-model="field.placeholder"
-                    class="mb-2"
-                    hint="A mezőben megjelenő segítő szöveg."
-                    persistent-hint
-                  />
+                      <v-text-field
+                        v-if="field.type === 'file'"
+                        label="Max fájlméret (MB)"
+                        v-model.number="field.validations.maxFileSize"
+                        type="number"
+                        class="mb-2"
+                      />
 
-                  <v-text-field
-                    label="Szekció neve"
-                    v-model="field.group"
-                    class="mb-2"
-                    hint="Egy szöveges szekciónév (pl. 'Kapcsolat')."
-                    persistent-hint
-                  />
-
-                  <v-switch v-model="field.enabled" label="Engedélyezve" class="mb-2" />
-                  <v-switch v-model="field.required" label="Kötelező" class="mb-2" />
-
-                  <template v-if="['text', 'number'].includes(field.type)">
-                    <v-text-field
-                      label="Minimum"
-                      v-model.number="field.validations.min"
-                      type="number"
-                      hint="Legkisebb elfogadható érték (csak számnál)"
-                      persistent-hint
-                    />
-                    <v-text-field
-                      label="Maximum"
-                      v-model.number="field.validations.max"
-                      type="number"
-                      hint="Legnagyobb elfogadható érték (csak számnál)"
-                      persistent-hint
-                    />
-                  </template>
-
-                  <v-text-field
-                    v-if="field.type === 'text'"
-                    label="Regex minta"
-                    v-model="field.validations.pattern"
-                    hint="Pl. ^[A-Za-z0-9]+$ (csak betűk és számok)"
-                    persistent-hint
-                  >
-                    <template #append>
-                      <v-tooltip text="Szabályos kifejezés, aminek meg kell felelnie a szövegnek.">
-                        <template #activator="{ props }">
-                          <v-icon v-bind="props" icon="mdi-help-circle" size="small" />
-                        </template>
-                      </v-tooltip>
-                    </template>
-                  </v-text-field>
-
-                  <v-text-field
-                    v-if="field.type === 'file'"
-                    label="Max fájlméret (MB)"
-                    v-model.number="field.validations.maxFileSize"
-                    type="number"
-                    hint="Csak fájlmező esetén értelmezett."
-                    persistent-hint
-                  />
-
-                  <template v-if="field.type === 'select'">
-                    <v-select
-                      label="Forrás típusa"
-                      :items="['cms', 'api']"
-                      v-model="field.sourceType"
-                      class="mb-2"
-                      hint="Az opciók forrása (saját CMS vagy API)"
-                      persistent-hint
-                    />
-
-                    <v-textarea
-                      v-if="field.sourceType === 'cms'"
-                      label="Opcók JSON"
-                      v-model="field.optionsText"
-                      hint="Pl. [{ value: 'a', text: 'A' }]"
-                      persistent-hint
-                      auto-grow
-                      class="mb-2"
-                    />
-
-                    <v-text-field
-                      v-if="field.sourceType === 'cms'"
-                      label="CMS kulcs"
-                      v-model="field.optionsKey"
-                      class="mb-2"
-                      hint="Az objektum kulcs, ahol az opciók tömbje van (pl. 'options')"
-                      persistent-hint
-                    >
-                      <template #append>
-                        <v-tooltip
-                          text="Ha az opciók JSON-ben egy kulcs alatt találhatók, pl. { 'options': [...] }, írd be: options"
-                        >
-                          <template #activator="{ props }">
-                            <v-icon v-bind="props" icon="mdi-help-circle" size="small" />
-                          </template>
-                        </v-tooltip>
+                      <template v-if="field.type === 'select'">
+                        <v-select
+                          label="Forrás típusa"
+                          :items="['cms', 'api']"
+                          v-model="field.sourceType"
+                          class="mb-2"
+                        />
+                        <v-textarea
+                          v-if="field.sourceType === 'cms'"
+                          label="Opcók JSON"
+                          v-model="field.optionsText"
+                          auto-grow
+                          class="mb-2"
+                        />
+                        <v-text-field
+                          v-if="field.sourceType === 'api'"
+                          label="API URL"
+                          v-model="field.source"
+                          class="mb-2"
+                        />
+                        <v-text-field
+                          v-if="field.sourceType === 'api'"
+                          label="API kulcs"
+                          v-model="field.sourceField"
+                          class="mb-2"
+                        />
                       </template>
-                    </v-text-field>
 
-                    <v-text-field
-                      v-if="field.sourceType === 'api'"
-                      label="API URL"
-                      v-model="field.source"
-                      class="mb-2"
-                      hint="Például: /api/options"
-                      persistent-hint
-                    />
-
-                    <v-text-field
-                      v-if="field.sourceType === 'api'"
-                      label="API kulcs"
-                      v-model="field.sourceField"
-                      class="mb-2"
-                      hint="Az a kulcs a válaszban, ami alatt a tömb van (pl. 'data')"
-                      persistent-hint
-                    >
-                      <template #append>
-                        <v-tooltip
-                          text="Az API válasz JSON objektumában található kulcs neve, ahol a tömb található."
-                        >
-                          <template #activator="{ props }">
-                            <v-icon v-bind="props" icon="mdi-help-circle" size="small" />
-                          </template>
-                        </v-tooltip>
-                      </template>
-                    </v-text-field>
-                  </template>
-
-                  <v-btn
-                    v-if="field.name !== 'active'"
-                    color="error"
-                    @click="removeField(i)"
-                    size="small"
-                    class="mt-2"
-                  >
-                    Törlés
-                  </v-btn>
+                      <v-btn
+                        v-if="field.name !== 'active'"
+                        color="error"
+                        @click="removeField(i)"
+                        size="small"
+                        class="mt-2"
+                      >
+                        Törlés
+                      </v-btn>
+                    </div>
+                  </v-expand-transition>
                 </v-card>
               </template>
             </draggable>

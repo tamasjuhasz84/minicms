@@ -8,7 +8,7 @@ import * as components from "vuetify/components";
 
 import axios from "@/utils/axios";
 
-// 🔐 Axios interceptor a JWT tokenhez
+// Axios interceptor a JWT tokenhez
 axios.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {

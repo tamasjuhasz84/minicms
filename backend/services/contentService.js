@@ -19,28 +19,25 @@ export async function loadContent() {
       placeholder: field.placeholder,
       enabled: !!field.enabled,
       required: !!field.required,
-      group: field.group,
       validations: field.validations ? JSON.parse(field.validations) : {},
       source: field.source,
       sourceField: field.sourceField,
-      options: field.options ? JSON.parse(field.options) : [], // <--- ÚJ
+      sourceType: field.sourceType || "",
+      options: field.options ? JSON.parse(field.options) : [],
     })),
   };
 }
 
 export async function saveContent(data) {
   const db = await getDb();
-
   const { header = {}, footer = {}, form = [] } = data;
 
-  await db.run("DELETE FROM content_meta");
   await db.run("DELETE FROM content_fields");
-
-  await db.run("INSERT INTO content_meta (key, value) VALUES (?, ?)", [
+  await db.run("INSERT OR REPLACE INTO content_meta (key, value) VALUES (?, ?)", [
     "header",
     JSON.stringify(header),
   ]);
-  await db.run("INSERT INTO content_meta (key, value) VALUES (?, ?)", [
+  await db.run("INSERT OR REPLACE INTO content_meta (key, value) VALUES (?, ?)", [
     "footer",
     JSON.stringify(footer),
   ]);
@@ -48,7 +45,7 @@ export async function saveContent(data) {
   const insertStmt = await db.prepare(`
     INSERT INTO content_fields (
       id, label, name, type, placeholder, enabled,
-      required, \`group\`, validations, source, sourceField, options, position
+      required, validations, source, sourceField, options, position, sourceType
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
@@ -64,12 +61,12 @@ export async function saveContent(data) {
         f.placeholder,
         f.enabled ? 1 : 0,
         f.required ? 1 : 0,
-        f.group || "",
         JSON.stringify(f.validations || {}),
         f.source || "",
         f.sourceField || "",
-        JSON.stringify(f.options || []), // <--- ÚJ
+        JSON.stringify(f.options || []),
         index,
+        f.sourceType || "",
       );
     }
   } finally {

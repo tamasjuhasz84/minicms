@@ -6,7 +6,7 @@ import { dirname } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const DB_PATH = path.join(__dirname, "..", "data", "submissions.db");
+const DB_PATH = path.join(__dirname, "..", "data", "cms.sqlite");
 
 export async function getDb() {
   return open({
