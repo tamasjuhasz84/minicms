@@ -1,13 +1,16 @@
 .app-layout {
+  // Alkalmazás fejléc
   .v-app-bar {
-    background-color: #1976d2; // például világoskék alap
-    color: white;
+    background-color: #1976d2 !important;
+    color: white !important;
   }
 
+  // Cím stílus
   .v-toolbar-title {
-    font-weight: bold;
+    font-weight: bold !important;
   }
 
+  // Bejelentkezési szekció
   .login-section {
     margin-top: 2rem;
 
@@ -18,9 +21,22 @@
     .v-btn {
       margin-top: 1rem;
     }
+
+    .v-text-field {
+      margin-bottom: 1rem;
+    }
   }
 
+  // Alap konténer padding
   .v-container {
     padding-top: 2rem;
+  }
+
+  // Footer kiegészítés, ha kellene
+  .v-footer {
+    background-color: #e0e0e0;
+    color: #333;
+    font-size: 14px;
+    padding: 1rem;
   }
 }

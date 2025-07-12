@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted } from "vue";
 import axios from "@/utils/axios";
 import draggable from "vuedraggable";
 import { v4 as uuidv4 } from "uuid";

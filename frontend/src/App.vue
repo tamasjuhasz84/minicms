@@ -4,6 +4,7 @@ import { useTheme } from "vuetify";
 import axios from "@/utils/axios";
 import DynamicForm from "./components/DynamicForm.vue";
 import AdminEditor from "./components/AdminEditor.vue";
+import "./app.scss";
 
 const authenticated = ref(false);
 const role = ref(null);
@@ -21,7 +22,7 @@ const isDarkMode = ref(localStorage.getItem("darkMode") === "true");
 const theme = useTheme();
 
 watch(isDarkMode, (val) => {
-  theme.global.name.value = val ? "dark" : "light";
+  theme.change(val ? "dark" : "light");
   localStorage.setItem("darkMode", val);
 });
 
@@ -95,8 +96,7 @@ function handleContentUpdate(newContent) {
 }
 
 onMounted(() => {
-  // Sötét mód inicializálás
-  theme.global.name.value = isDarkMode.value ? "dark" : "light";
+  theme.change(isDarkMode.value ? "dark" : "light");
 
   const token = localStorage.getItem("jwt");
   if (token) {

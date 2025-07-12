@@ -1,17 +1,15 @@
 ## [1.0.4](https://github.com/tamasjuhasz84/minicms/compare/backend-v1.0.3...backend-v1.0.4) (2025-07-12)
 
-
 ### Bug Fixes
 
-* **backend:** package-json ([b562843](https://github.com/tamasjuhasz84/minicms/commit/b562843383a33be13a36239809342b8a5f141432))
-* **frontend, backend:** linters ([c3a357c](https://github.com/tamasjuhasz84/minicms/commit/c3a357cb5c9df472d1323d7e2ad82ffe7341f04e))
+- **backend:** package-json ([b562843](https://github.com/tamasjuhasz84/minicms/commit/b562843383a33be13a36239809342b8a5f141432))
+- **frontend, backend:** linters ([c3a357c](https://github.com/tamasjuhasz84/minicms/commit/c3a357cb5c9df472d1323d7e2ad82ffe7341f04e))
 
 ## [1.0.3](https://github.com/tamasjuhasz84/minicms/compare/backend-v1.0.2...backend-v1.0.3) (2025-07-05)
 
-
 ### Bug Fixes
 
-* **backend:** remove test ([f5f0d2f](https://github.com/tamasjuhasz84/minicms/commit/f5f0d2f9abda49a351f88e2cb04316a7c9caadbf))
+- **backend:** remove test ([f5f0d2f](https://github.com/tamasjuhasz84/minicms/commit/f5f0d2f9abda49a351f88e2cb04316a7c9caadbf))
 
 ## [1.0.2](https://github.com/tamasjuhasz84/minicms/compare/backend-v1.0.1...backend-v1.0.2) (2025-07-05)
 
