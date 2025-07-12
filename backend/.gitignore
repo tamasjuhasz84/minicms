@@ -1,9 +1,6 @@
 # node modules
 node_modules/
 
-# környezeti változók
-.env
-
 # log fájlok
 *.log
 

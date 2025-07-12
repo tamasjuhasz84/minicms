@@ -1,4 +1,5 @@
-// backend/eslint.config.js
+import prettier from "eslint-config-prettier";
+
 export default [
   {
     ignores: ["node_modules/**", "data/**"],
@@ -18,4 +19,5 @@ export default [
       indent: ["error", 2],
     },
   },
+  prettier, // <- Ez kikapcsol minden format-related szabályt
 ];

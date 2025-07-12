@@ -1,113 +1,113 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import axios from '@/utils/axios'
-import * as XLSX from 'xlsx'
-import './SubmissionList.scss'
+import { ref, onMounted } from "vue";
+import axios from "@/utils/axios";
+import * as XLSX from "xlsx";
+import "./SubmissionList.scss";
 
-const submissions = ref([])
+const submissions = ref([]);
 
 const headers = ref([
-  { text: 'ID', value: 'id' },
-  { text: 'Dátum', value: 'created_at' },
-  { text: 'IP cím', value: 'ip_address' },
-  { text: 'Űrlapadatok', value: 'data' },
-  { text: 'Műveletek', value: 'actions', sortable: false },
-])
+  { text: "ID", value: "id" },
+  { text: "Dátum", value: "created_at" },
+  { text: "IP cím", value: "ip_address" },
+  { text: "Űrlapadatok", value: "data" },
+  { text: "Műveletek", value: "actions", sortable: false },
+]);
 
 function handleAuthError(error) {
   if (error.response?.status === 403) {
-    alert('A munkamenet lejárt. Kérlek, jelentkezz be újra.')
-    localStorage.removeItem('jwt')
-    window.location.href = '/admin'
+    alert("A munkamenet lejárt. Kérlek, jelentkezz be újra.");
+    localStorage.removeItem("jwt");
+    window.location.href = "/admin";
   } else {
-    alert('Hiba történt a lekérdezés során.')
-    console.error(error)
+    alert("Hiba történt a lekérdezés során.");
+    console.error(error);
   }
 }
 
 function loadSubmissions() {
   axios
-    .get('/submissions')
+    .get("/submissions")
     .then((res) => {
-      submissions.value = res.data
+      submissions.value = res.data;
     })
-    .catch(handleAuthError)
+    .catch(handleAuthError);
 }
 
 function deleteOne(id) {
-  if (confirm('Biztosan törlöd ezt a rekordot?')) {
-    axios.delete(`/submissions/${id}`).then(loadSubmissions).catch(handleAuthError)
+  if (confirm("Biztosan törlöd ezt a rekordot?")) {
+    axios.delete(`/submissions/${id}`).then(loadSubmissions).catch(handleAuthError);
   }
 }
 
 function deleteAll() {
-  if (confirm('Biztosan törlöd az összes beküldést?')) {
-    axios.delete('/submissions').then(loadSubmissions).catch(handleAuthError)
+  if (confirm("Biztosan törlöd az összes beküldést?")) {
+    axios.delete("/submissions").then(loadSubmissions).catch(handleAuthError);
   }
 }
 
 function getExportRows(data) {
   return data.map((row) => {
-    const parsed = JSON.parse(row.data)
+    const parsed = JSON.parse(row.data);
     return {
       ID: row.id,
       Dátum: new Date(row.created_at).toLocaleString(),
-      IP: row.ip_address || 'ismeretlen',
+      IP: row.ip_address || "ismeretlen",
       ...parsed,
-    }
-  })
+    };
+  });
 }
 
 function exportCSV() {
   axios
-    .get('/submissions')
+    .get("/submissions")
     .then((res) => {
-      const rows = getExportRows(res.data)
+      const rows = getExportRows(res.data);
       if (!rows.length) {
-        alert('Nincs mit exportálni.')
-        return
+        alert("Nincs mit exportálni.");
+        return;
       }
 
-      const headers = Object.keys(rows[0])
+      const headers = Object.keys(rows[0]);
       const csv = [
-        headers.join(','),
+        headers.join(","),
         ...rows.map((row) =>
-          headers.map((h) => `"${(row[h] ?? '').toString().replace(/"/g, '""')}"`).join(','),
+          headers.map((h) => `"${(row[h] ?? "").toString().replace(/"/g, '""')}"`).join(","),
         ),
-      ].join('\n')
+      ].join("\n");
 
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', 'submissions_export.csv')
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "submissions_export.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     })
-    .catch(handleAuthError)
+    .catch(handleAuthError);
 }
 
 function exportXLSX() {
   axios
-    .get('/submissions')
+    .get("/submissions")
     .then((res) => {
-      const rows = getExportRows(res.data)
+      const rows = getExportRows(res.data);
       if (!rows.length) {
-        alert('Nincs mit exportálni.')
-        return
+        alert("Nincs mit exportálni.");
+        return;
       }
 
-      const worksheet = XLSX.utils.json_to_sheet(rows)
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Beküldések')
-      XLSX.writeFile(workbook, 'submissions_export.xlsx')
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Beküldések");
+      XLSX.writeFile(workbook, "submissions_export.xlsx");
     })
-    .catch(handleAuthError)
+    .catch(handleAuthError);
 }
 
-onMounted(loadSubmissions)
+onMounted(loadSubmissions);
 </script>
 
 <template>
@@ -146,7 +146,7 @@ onMounted(loadSubmissions)
         </template>
 
         <template v-slot:[`item.ip_address`]="{ item }">
-          {{ item.ip_address || 'ismeretlen' }}
+          {{ item.ip_address || "ismeretlen" }}
         </template>
 
         <template v-slot:[`item.data`]="{ item }">

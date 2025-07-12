@@ -32,6 +32,4 @@ await db.exec(`
   );
 `);
 
-console.log(
-  "Adatbázis inicializálva: content_meta + content_fields + submissions.",
-);
+console.log("Adatbázis inicializálva: content_meta + content_fields + submissions.");

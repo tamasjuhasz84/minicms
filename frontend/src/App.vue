@@ -1,34 +1,34 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { useTheme } from 'vuetify'
-import axios from '@/utils/axios'
-import DynamicForm from './components/DynamicForm.vue'
-import AdminEditor from './components/AdminEditor.vue'
+import { ref, onMounted, watch } from "vue";
+import { useTheme } from "vuetify";
+import axios from "@/utils/axios";
+import DynamicForm from "./components/DynamicForm.vue";
+import AdminEditor from "./components/AdminEditor.vue";
 
-const authenticated = ref(false)
-const role = ref(null)
-const showLogin = ref(false)
+const authenticated = ref(false);
+const role = ref(null);
+const showLogin = ref(false);
 const loginForm = ref({
-  username: '',
-  password: '',
-})
+  username: "",
+  password: "",
+});
 
-const formFields = ref([])
-const initialContent = ref(null)
+const formFields = ref([]);
+const initialContent = ref(null);
 
 // Sötét és világos mód
-const isDarkMode = ref(localStorage.getItem('darkMode') === 'true')
-const theme = useTheme()
+const isDarkMode = ref(localStorage.getItem("darkMode") === "true");
+const theme = useTheme();
 
 watch(isDarkMode, (val) => {
-  theme.global.name.value = val ? 'dark' : 'light'
-  localStorage.setItem('darkMode', val)
-})
+  theme.global.name.value = val ? "dark" : "light";
+  localStorage.setItem("darkMode", val);
+});
 
 // Axios beállítások
-const token = localStorage.getItem('jwt')
+const token = localStorage.getItem("jwt");
 if (token) {
-  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 }
 
 // Interceptor token lejárat esetén
@@ -36,85 +36,85 @@ axios.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && [401, 403].includes(error.response.status)) {
-      localStorage.removeItem('jwt')
-      delete axios.defaults.headers.common['Authorization']
-      authenticated.value = false
-      role.value = null
-      showLogin.value = true
-      alert('A munkamenet lejárt. Kérlek, jelentkezz be újra.')
+      localStorage.removeItem("jwt");
+      delete axios.defaults.headers.common["Authorization"];
+      authenticated.value = false;
+      role.value = null;
+      showLogin.value = true;
+      alert("A munkamenet lejárt. Kérlek, jelentkezz be újra.");
     }
-    return Promise.reject(error)
+    return Promise.reject(error);
   },
-)
+);
 
 function loadContent() {
   axios
-    .get('/content')
+    .get("/content")
     .then((res) => {
-      initialContent.value = res.data
-      formFields.value = res.data.form || []
+      initialContent.value = res.data;
+      formFields.value = res.data.form || [];
     })
-    .catch((err) => console.error('Hiba a tartalom betöltésekor:', err))
+    .catch((err) => console.error("Hiba a tartalom betöltésekor:", err));
 }
 
 function login() {
   axios
-    .post('/login', loginForm.value)
+    .post("/login", loginForm.value)
     .then((res) => {
       if (res.data.token) {
-        localStorage.setItem('jwt', res.data.token)
-        axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
+        localStorage.setItem("jwt", res.data.token);
+        axios.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
       }
-      if (res.data.role === 'admin') {
-        authenticated.value = true
-        role.value = res.data.role
-        showLogin.value = false
+      if (res.data.role === "admin") {
+        authenticated.value = true;
+        role.value = res.data.role;
+        showLogin.value = false;
       } else {
-        alert('Csak admin felhasználó léphet be az adminfelületre.')
+        alert("Csak admin felhasználó léphet be az adminfelületre.");
       }
     })
     .catch((err) => {
-      console.error('Hiba a bejelentkezéskor:', err)
-      alert('Hibás bejelentkezési adatok.')
-    })
+      console.error("Hiba a bejelentkezéskor:", err);
+      alert("Hibás bejelentkezési adatok.");
+    });
 }
 
 function logout() {
-  authenticated.value = false
-  role.value = null
-  showLogin.value = false
-  loginForm.value.username = ''
-  loginForm.value.password = ''
-  localStorage.removeItem('jwt')
-  delete axios.defaults.headers.common['Authorization']
+  authenticated.value = false;
+  role.value = null;
+  showLogin.value = false;
+  loginForm.value.username = "";
+  loginForm.value.password = "";
+  localStorage.removeItem("jwt");
+  delete axios.defaults.headers.common["Authorization"];
 }
 
 function handleContentUpdate(newContent) {
-  initialContent.value = newContent
-  formFields.value = newContent.form || []
+  initialContent.value = newContent;
+  formFields.value = newContent.form || [];
 }
 
 onMounted(() => {
   // Sötét mód inicializálás
-  theme.global.name.value = isDarkMode.value ? 'dark' : 'light'
+  theme.global.name.value = isDarkMode.value ? "dark" : "light";
 
-  const token = localStorage.getItem('jwt')
+  const token = localStorage.getItem("jwt");
   if (token) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
-      if (payload.role === 'admin') {
-        authenticated.value = true
-        role.value = 'admin'
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (payload.role === "admin") {
+        authenticated.value = true;
+        role.value = "admin";
       }
     } catch (err) {
-      console.warn('Érvénytelen token:', err)
-      localStorage.removeItem('jwt')
+      console.warn("Érvénytelen token:", err);
+      localStorage.removeItem("jwt");
     }
   }
 
-  loadContent()
-})
+  loadContent();
+});
 </script>
 
 <template>
@@ -127,7 +127,7 @@ onMounted(() => {
         @click="isDarkMode = !isDarkMode"
         :title="isDarkMode ? 'Világos mód' : 'Sötét mód'"
       >
-        <v-icon>{{ isDarkMode ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
+        <v-icon>{{ isDarkMode ? "mdi-white-balance-sunny" : "mdi-weather-night" }}</v-icon>
       </v-btn>
       <v-btn text v-if="!authenticated" @click="showLogin = true">Bejelentkezés</v-btn>
       <v-btn text v-else @click="logout">Kilépés</v-btn>

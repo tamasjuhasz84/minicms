@@ -1,201 +1,201 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import axios from '@/utils/axios'
-import { v4 as uuidv4 } from 'uuid'
-import './DynamicForm.scss'
+import { ref, computed, watch, onMounted } from "vue";
+import axios from "@/utils/axios";
+import { v4 as uuidv4 } from "uuid";
+import "./DynamicForm.scss";
 
 const props = defineProps({
   formFields: {
     type: Array,
     required: true,
   },
-})
+});
 
-const formRef = ref(null)
-const formData = ref({})
-const selectOptions = ref({})
-const header = ref({})
-const footer = ref({})
+const formRef = ref(null);
+const formData = ref({});
+const selectOptions = ref({});
+const header = ref({});
+const footer = ref({});
 const styles = ref({
-  color: '#1976d2',
-  fontSize: '16px',
-  buttonLabel: 'Küldés',
-})
-const showLogin = ref(false)
-const authenticated = ref(false)
-const loginForm = ref({ username: '', password: '' })
-const errorMessages = ref([])
+  color: "#1976d2",
+  fontSize: "16px",
+  buttonLabel: "Küldés",
+});
+const showLogin = ref(false);
+const authenticated = ref(false);
+const loginForm = ref({ username: "", password: "" });
+const errorMessages = ref([]);
 
 const enabledFields = computed(() => {
-  if (!Array.isArray(props.formFields)) return []
+  if (!Array.isArray(props.formFields)) return [];
   return props.formFields
     .filter((f) => f.enabled !== false)
-    .map((field) => ({ ...field, uuid: uuidv4() }))
-})
+    .map((field) => ({ ...field, uuid: uuidv4() }));
+});
 
 watch(
   () => props.formFields,
   () => {
-    initFormData()
-    loadSelects()
+    initFormData();
+    loadSelects();
   },
   { immediate: true },
-)
+);
 
 onMounted(() => {
-  axios.get('/content').then((res) => {
-    header.value = res.data.header || {}
-    footer.value = res.data.footer || {}
-    const incoming = res.data.styles || styles.value
+  axios.get("/content").then((res) => {
+    header.value = res.data.header || {};
+    footer.value = res.data.footer || {};
+    const incoming = res.data.styles || styles.value;
     styles.value = {
       ...incoming,
-      inputBackground: incoming.color || '#ffffff',
-    }
-  })
-})
+      inputBackground: incoming.color || "#ffffff",
+    };
+  });
+});
 
 function initFormData() {
-  formData.value = {}
-  if (!Array.isArray(props.formFields)) return
+  formData.value = {};
+  if (!Array.isArray(props.formFields)) return;
   props.formFields.forEach((field) => {
-    formData.value[field.name] = field.type === 'switch' ? false : ''
-  })
+    formData.value[field.name] = field.type === "switch" ? false : "";
+  });
 }
 
 function loadSelects() {
-  if (!Array.isArray(props.formFields)) return
-  const apiFields = props.formFields.filter((f) => f.type === 'select' && f.source)
+  if (!Array.isArray(props.formFields)) return;
+  const apiFields = props.formFields.filter((f) => f.type === "select" && f.source);
   apiFields.forEach((field) => {
     axios
       .get(field.source)
       .then((res) => {
-        let options = []
+        let options = [];
 
         if (field.sourceField && Array.isArray(res.data[field.sourceField])) {
-          options = res.data[field.sourceField]
-        } else if (typeof res.data === 'object') {
-          const values = Object.values(res.data)
-          options = values.find((v) => Array.isArray(v)) || []
+          options = res.data[field.sourceField];
+        } else if (typeof res.data === "object") {
+          const values = Object.values(res.data);
+          options = values.find((v) => Array.isArray(v)) || [];
         }
 
-        selectOptions.value[field.name] = options
+        selectOptions.value[field.name] = options;
       })
       .catch((err) => {
-        console.error(`Hiba a(z) ${field.source} betöltésekor`, err)
-      })
-  })
+        console.error(`Hiba a(z) ${field.source} betöltésekor`, err);
+      });
+  });
 }
 
 function getSelectItems(field) {
   if (Array.isArray(field.options)) {
-    return field.options.map((opt) => ({ text: opt.text, value: opt.value }))
+    return field.options.map((opt) => ({ text: opt.text, value: opt.value }));
   }
-  if (typeof field.options === 'object' && field.options !== null) {
-    const array = Object.values(field.options).find((v) => Array.isArray(v))
+  if (typeof field.options === "object" && field.options !== null) {
+    const array = Object.values(field.options).find((v) => Array.isArray(v));
     if (array) {
-      return array.map((opt) => ({ text: opt.text, value: opt.value }))
+      return array.map((opt) => ({ text: opt.text, value: opt.value }));
     }
   }
-  const data = selectOptions.value[field.name]
-  return Array.isArray(data) ? data : []
+  const data = selectOptions.value[field.name];
+  return Array.isArray(data) ? data : [];
 }
 
 function getValidationRules(field) {
-  const rules = []
+  const rules = [];
 
-  const isEmpty = (val) => val === '' || val === null || val === undefined
+  const isEmpty = (val) => val === "" || val === null || val === undefined;
 
   // Kötelező mező ellenőrzése
   if (field.required) {
-    rules.push((v) => !isEmpty(v) || `${field.label} kötelező.`)
+    rules.push((v) => !isEmpty(v) || `${field.label} kötelező.`);
   }
 
   // Minden egyéb validáció csak akkor fusson, ha nem üres (vagy ha kötelező)
   rules.push((v) => {
-    if (!field.required && isEmpty(v)) return true
+    if (!field.required && isEmpty(v)) return true;
 
     // Szám típus
-    if (field.type === 'number') {
-      const num = Number(v)
-      if (isNaN(num)) return `${field.label} nem érvényes szám.`
+    if (field.type === "number") {
+      const num = Number(v);
+      if (isNaN(num)) return `${field.label} nem érvényes szám.`;
       if (field.validations?.min != null && num < field.validations.min)
-        return `Minimum érték: ${field.validations.min}`
+        return `Minimum érték: ${field.validations.min}`;
       if (field.validations?.max != null && num > field.validations.max)
-        return `Maximum érték: ${field.validations.max}`
+        return `Maximum érték: ${field.validations.max}`;
     }
 
     // Szöveg típus
-    if (typeof v === 'string') {
+    if (typeof v === "string") {
       if (field.validations?.min != null && v.length < field.validations.min)
-        return `Minimum ${field.validations.min} karakter.`
+        return `Minimum ${field.validations.min} karakter.`;
       if (field.validations?.max != null && v.length > field.validations.max)
-        return `Maximum ${field.validations.max} karakter.`
+        return `Maximum ${field.validations.max} karakter.`;
 
       if (field.validations?.pattern) {
         try {
-          const regex = new RegExp(field.validations.pattern)
-          if (!regex.test(v)) return `Hibás formátum`
+          const regex = new RegExp(field.validations.pattern);
+          if (!regex.test(v)) return `Hibás formátum`;
         } catch (e) {
-          console.warn('Érvénytelen regex minta:', field.validations.pattern, e)
+          console.warn("Érvénytelen regex minta:", field.validations.pattern, e);
         }
       }
 
-      if (field.type === 'email') {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(v)) return `Nem érvényes email.`
+      if (field.type === "email") {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(v)) return `Nem érvényes email.`;
       }
 
-      if (field.type === 'tel') {
-        const telRegex = /^[0-9+ ]{6,20}$/
-        if (!telRegex.test(v)) return `Nem érvényes telefonszám.`
+      if (field.type === "tel") {
+        const telRegex = /^[0-9+ ]{6,20}$/;
+        if (!telRegex.test(v)) return `Nem érvényes telefonszám.`;
       }
     }
 
-    return true
-  })
+    return true;
+  });
 
-  return rules
+  return rules;
 }
 
 async function submitForm() {
-  errorMessages.value = []
+  errorMessages.value = [];
 
-  const result = await formRef.value?.validate()
+  const result = await formRef.value?.validate();
   if (!result?.valid) {
-    errorMessages.value.push('Kérjük, javítsd a hibás mezőket.')
-    return
+    errorMessages.value.push("Kérjük, javítsd a hibás mezőket.");
+    return;
   }
 
   if (!formData.value.active) {
     errorMessages.value.push(
       'A beküldés csak akkor engedélyezett, ha a "Beküldhető" mező be van kapcsolva.',
-    )
-    return
+    );
+    return;
   }
 
   axios
-    .post('/submit', { ...formData.value })
-    .then(() => alert('Sikeres beküldés!'))
-    .catch(() => alert('Hiba a beküldés során.'))
+    .post("/submit", { ...formData.value })
+    .then(() => alert("Sikeres beküldés!"))
+    .catch(() => alert("Hiba a beküldés során."));
 }
 
 function login() {
   axios
-    .post('/login', loginForm.value)
+    .post("/login", loginForm.value)
     .then((res) => {
-      const token = res.data.token
+      const token = res.data.token;
       if (token) {
-        localStorage.setItem('jwt', token)
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+        localStorage.setItem("jwt", token);
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       }
-      if (res.data.role === 'admin') {
-        authenticated.value = true
-        showLogin.value = false
+      if (res.data.role === "admin") {
+        authenticated.value = true;
+        showLogin.value = false;
       } else {
-        alert('Csak admin felhasználó léphet be.')
+        alert("Csak admin felhasználó léphet be.");
       }
     })
-    .catch(() => alert('Hibás bejelentkezési adatok.'))
+    .catch(() => alert("Hibás bejelentkezési adatok."));
 }
 </script>
 
@@ -294,7 +294,17 @@ function login() {
           </v-form>
 
           <v-divider class="my-6"></v-divider>
-          <footer class="text-caption text-center">{{ footer.text }}</footer>
+          <v-footer class="text-center d-flex flex-column ga-2 py-4" color="indigo-lighten-1">
+            <div v-if="footer.title" class="text-h6 font-weight-medium opacity-90 px-4">
+              {{ footer.title }}
+            </div>
+
+            <v-divider class="my-2" thickness="2" width="50"></v-divider>
+
+            <div v-if="footer.text" class="text-caption font-weight-regular opacity-60 px-4">
+              {{ footer.text }}
+            </div>
+          </v-footer>
         </div>
       </v-container>
     </v-main>

@@ -1,180 +1,180 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import axios from '@/utils/axios'
-import draggable from 'vuedraggable'
-import { v4 as uuidv4 } from 'uuid'
-import './AdminEditor.scss'
-import SubmissionList from './SubmissionList.vue'
+import { ref, onMounted } from "vue";
+import axios from "@/utils/axios";
+import draggable from "vuedraggable";
+import { v4 as uuidv4 } from "uuid";
+import "./AdminEditor.scss";
+import SubmissionList from "./SubmissionList.vue";
 
 const props = defineProps({
   initialContent: Object,
-})
+});
 
-const emit = defineEmits(['content-updated'])
+const emit = defineEmits(["content-updated"]);
 
-const tab = ref(0)
+const tab = ref(0);
 
 const editableContent = ref({
-  header: { title: '', image: '' },
-  footer: { text: '' },
+  header: { title: "", image: "" },
+  footer: { title: "", text: "" },
   form: [],
   styles: {
-    color: '#1976d2',
-    backgroundColor: '#f5f5f5',
-    buttonFontSize: '16px',
-    inputFontSize: '14px',
-    labelFontSize: '13px',
-    fontFamily: 'Roboto, sans-serif',
-    buttonLabel: 'Küldés',
+    color: "#1976d2",
+    backgroundColor: "#f5f5f5",
+    buttonFontSize: "16px",
+    inputFontSize: "14px",
+    labelFontSize: "13px",
+    fontFamily: "Roboto, sans-serif",
+    buttonLabel: "Küldés",
   },
-})
+});
 
 function addField() {
   editableContent.value.form.push({
     id: uuidv4(),
-    label: '',
-    name: '',
-    type: 'text',
-    placeholder: '',
+    label: "",
+    name: "",
+    type: "text",
+    placeholder: "",
     enabled: true,
     required: false,
-    group: '',
+    group: "",
     validations: {
       min: null,
       max: null,
-      pattern: '',
+      pattern: "",
       maxFileSize: null,
     },
-    sourceType: 'cms',
-    optionsText: '',
-    optionsKey: '',
-    source: '',
-    sourceField: '',
-  })
+    sourceType: "cms",
+    optionsText: "",
+    optionsKey: "",
+    source: "",
+    sourceField: "",
+  });
 }
 
 function removeField(index) {
-  const field = editableContent.value.form[index]
-  if (field.name === 'active') {
-    alert('A "Beküldhető" mező nem törölhető.')
-    return
+  const field = editableContent.value.form[index];
+  if (field.name === "active") {
+    alert('A "Beküldhető" mező nem törölhető.');
+    return;
   }
-  editableContent.value.form.splice(index, 1)
+  editableContent.value.form.splice(index, 1);
 }
 
 function saveContent() {
   const form = editableContent.value.form.map((f) => {
-    const copy = { ...f }
+    const copy = { ...f };
 
     // Select mezők CMS-forrással → optionsText feldolgozás
-    if (f.type === 'select' && f.sourceType === 'cms') {
+    if (f.type === "select" && f.sourceType === "cms") {
       try {
-        copy.options = JSON.parse(f.optionsText || '[]')
+        copy.options = JSON.parse(f.optionsText || "[]");
 
         if (!Array.isArray(copy.options)) {
-          throw new Error('Az options nem tömb!')
+          throw new Error("Az options nem tömb!");
         }
       } catch (err) {
-        alert(`Hibás JSON az opcióknál: ${f.label || f.name || 'névtelen mező'}`)
-        throw err
+        alert(`Hibás JSON az opcióknál: ${f.label || f.name || "névtelen mező"}`);
+        throw err;
       }
     }
 
-    return copy
-  })
+    return copy;
+  });
 
   axios
-    .post('/content?api_key=secret', {
+    .post("/content?api_key=secret", {
       ...editableContent.value,
       form,
     })
     .then(() => {
-      alert('Sikeres mentés')
+      alert("Sikeres mentés");
 
       // ✨ Új tartalom emitálása a fő App.vue komponensnek
-      emit('content-updated', {
+      emit("content-updated", {
         ...editableContent.value,
         form,
-      })
+      });
     })
     .catch((err) => {
-      console.error('Mentési hiba:', err)
-      alert('Mentési hiba.')
-    })
+      console.error("Mentési hiba:", err);
+      alert("Mentési hiba.");
+    });
 }
 
 onMounted(() => {
   if (props.initialContent) {
-    const content = JSON.parse(JSON.stringify(props.initialContent))
+    const content = JSON.parse(JSON.stringify(props.initialContent));
 
-    if (!content.form.some((f) => f.name === 'active')) {
+    if (!content.form.some((f) => f.name === "active")) {
       content.form.unshift({
         id: uuidv4(),
-        label: 'Beküldhető',
-        name: 'active',
-        type: 'switch',
+        label: "Beküldhető",
+        name: "active",
+        type: "switch",
         enabled: true,
         required: false,
-      })
+      });
     }
 
     content.form = content.form.map((f) => {
       const field = {
         id: f.id || uuidv4(),
-        label: f.label || '',
-        name: f.name || '',
-        type: f.type || 'text',
-        placeholder: f.placeholder || '',
-        enabled: typeof f.enabled === 'undefined' ? true : f.enabled,
+        label: f.label || "",
+        name: f.name || "",
+        type: f.type || "text",
+        placeholder: f.placeholder || "",
+        enabled: typeof f.enabled === "undefined" ? true : f.enabled,
         required: f.required || false,
-        group: f.group || '',
+        group: f.group || "",
         validations: f.validations || {
           min: null,
           max: null,
-          pattern: '',
+          pattern: "",
           maxFileSize: null,
         },
-        optionsText: '',
-        optionsKey: f.optionsKey || '',
-        sourceType: '',
-        source: f.source || '',
-        sourceField: f.sourceField || '',
-      }
+        optionsText: "",
+        optionsKey: f.optionsKey || "",
+        sourceType: "",
+        source: f.source || "",
+        sourceField: f.sourceField || "",
+      };
 
-      if (f.type === 'select') {
+      if (f.type === "select") {
         if (Array.isArray(f.options)) {
-          field.optionsText = JSON.stringify(f.options, null, 2)
-          field.sourceType = 'cms'
-        } else if (typeof f.options === 'object' && f.options !== null) {
-          const key = Object.keys(f.options).find((k) => Array.isArray(f.options[k]))
-          const array = key ? f.options[key] : []
-          field.optionsKey = key || ''
-          field.optionsText = JSON.stringify(array, null, 2)
-          field.sourceType = 'cms'
+          field.optionsText = JSON.stringify(f.options, null, 2);
+          field.sourceType = "cms";
+        } else if (typeof f.options === "object" && f.options !== null) {
+          const key = Object.keys(f.options).find((k) => Array.isArray(f.options[k]));
+          const array = key ? f.options[key] : [];
+          field.optionsKey = key || "";
+          field.optionsText = JSON.stringify(array, null, 2);
+          field.sourceType = "cms";
         } else if (f.source) {
-          field.sourceType = 'api'
+          field.sourceType = "api";
         }
       }
 
-      return field
-    })
+      return field;
+    });
 
     editableContent.value = {
-      header: content.header || { title: '', image: '' },
-      footer: content.footer || { text: '' },
+      header: content.header || { title: "", image: "" },
+      footer: { title: "", text: "" },
       form: content.form,
       styles: content.styles || {
-        color: '#1976d2',
-        backgroundColor: '#f5f5f5',
-        buttonFontSize: '16px',
-        inputFontSize: '14px',
-        labelFontSize: '13px',
-        fontFamily: 'Roboto, sans-serif',
-        buttonLabel: 'Küldés',
+        color: "#1976d2",
+        backgroundColor: "#f5f5f5",
+        buttonFontSize: "16px",
+        inputFontSize: "14px",
+        labelFontSize: "13px",
+        fontFamily: "Roboto, sans-serif",
+        buttonLabel: "Küldés",
       },
-    }
+    };
   }
-})
+});
 </script>
 
 <template>
@@ -197,6 +197,7 @@ onMounted(() => {
           <!-- Lábléc -->
           <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-2">Lábléc</h3>
+            <v-text-field label="Cím" v-model="editableContent.footer.title" />
             <v-text-field label="Szöveg" v-model="editableContent.footer.text" />
           </v-card>
 
@@ -267,7 +268,7 @@ onMounted(() => {
               <template #item="{ element: field, index: i }">
                 <v-card class="pa-4 mb-4 draggable-card">
                   <div class="d-flex align-center justify-space-between mb-3">
-                    <strong>{{ field.label || 'Új mező' }}</strong>
+                    <strong>{{ field.label || "Új mező" }}</strong>
                     <span class="drag-icon">☰</span>
                   </div>
 

@@ -24,60 +24,53 @@ export async function submitForm(req, res) {
       let base;
 
       switch (field.type) {
-      case "text":
-      case "select":
-        base = z.string();
-        break;
+        case "text":
+        case "select":
+          base = z.string();
+          break;
 
-      case "email":
-        base = z.string().email(`${field.label} nem érvényes email.`);
-        break;
+        case "email":
+          base = z.string().email(`${field.label} nem érvényes email.`);
+          break;
 
-      case "number":
-        base = z.preprocess(
-          (val) => {
-            if (isEmpty(val)) return undefined;
-            const num = Number(val);
-            return isNaN(num) ? undefined : num;
-          },
-          isRequired ? z.number() : z.number().optional(),
-        );
-        break;
-
-      case "checkbox":
-      case "switch":
-        base = z.boolean();
-        break;
-
-      case "file":
-        base = z
-          .object({
-            name: z.string(),
-            size: z
-              .number()
-              .max(5 * 1024 * 1024, `${field.label} túl nagy fájl.`),
-            type: z.string(),
-            base64: z.string().startsWith("data:"),
-          })
-          .nullable();
-        if (isRequired) {
-          base = base.refine((val) => val !== null, {
-            message: `${field.label} kötelező fájl.`,
-          });
-        }
-        break;
-
-      case "tel":
-        base = z
-          .string()
-          .regex(
-            /^[0-9+ ]{6,20}$/,
-            `${field.label} nem érvényes telefonszám.`,
+        case "number":
+          base = z.preprocess(
+            (val) => {
+              if (isEmpty(val)) return undefined;
+              const num = Number(val);
+              return isNaN(num) ? undefined : num;
+            },
+            isRequired ? z.number() : z.number().optional(),
           );
-        break;
+          break;
 
-      default:
-        base = z.any();
+        case "checkbox":
+        case "switch":
+          base = z.boolean();
+          break;
+
+        case "file":
+          base = z
+            .object({
+              name: z.string(),
+              size: z.number().max(5 * 1024 * 1024, `${field.label} túl nagy fájl.`),
+              type: z.string(),
+              base64: z.string().startsWith("data:"),
+            })
+            .nullable();
+          if (isRequired) {
+            base = base.refine((val) => val !== null, {
+              message: `${field.label} kötelező fájl.`,
+            });
+          }
+          break;
+
+        case "tel":
+          base = z.string().regex(/^[0-9+ ]{6,20}$/, `${field.label} nem érvényes telefonszám.`);
+          break;
+
+        default:
+          base = z.any();
       }
 
       if (!isRequired) {
@@ -97,8 +90,7 @@ export async function submitForm(req, res) {
           (val) => {
             if (!isRequired && isEmpty(val)) return true;
             if (field.type === "number") return val >= field.validations.min;
-            if (typeof val === "string")
-              return val.length >= field.validations.min;
+            if (typeof val === "string") return val.length >= field.validations.min;
             return true;
           },
           {
@@ -116,8 +108,7 @@ export async function submitForm(req, res) {
           (val) => {
             if (!isRequired && isEmpty(val)) return true;
             if (field.type === "number") return val <= field.validations.max;
-            if (typeof val === "string")
-              return val.length <= field.validations.max;
+            if (typeof val === "string") return val.length <= field.validations.max;
             return true;
           },
           {
@@ -158,9 +149,7 @@ export async function submitForm(req, res) {
     }
 
     const ip =
-      req.headers["x-forwarded-for"]?.split(",")[0] ||
-      req.socket?.remoteAddress ||
-      "ismeretlen";
+      req.headers["x-forwarded-for"]?.split(",")[0] || req.socket?.remoteAddress || "ismeretlen";
 
     await submissionService.addSubmission(parsed.data, ip);
     res.json({ success: true, message: "Mentés sikeres." });
@@ -173,8 +162,7 @@ export async function submitForm(req, res) {
 export async function deleteSubmissionById(req, res) {
   try {
     const deleted = await submissionService.deleteSubmission(req.params.id);
-    if (deleted === 0)
-      return res.status(404).json({ error: "Nem található a beküldés" });
+    if (deleted === 0) return res.status(404).json({ error: "Nem található a beküldés" });
     res.json({ success: true, message: `Törölve: ${req.params.id}` });
   } catch (err) {
     console.error("Törlési hiba:", err);

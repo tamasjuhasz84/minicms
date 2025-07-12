@@ -3,14 +3,10 @@ import { getDb } from "../utils/db.js";
 export async function loadContent() {
   const db = await getDb();
 
-  const form = await db.all(
-    "SELECT * FROM content_fields ORDER BY position ASC",
-  );
+  const form = await db.all("SELECT * FROM content_fields ORDER BY position ASC");
 
   const metaRows = await db.all("SELECT key, value FROM content_meta");
-  const meta = Object.fromEntries(
-    metaRows.map((row) => [row.key, JSON.parse(row.value)]),
-  );
+  const meta = Object.fromEntries(metaRows.map((row) => [row.key, JSON.parse(row.value)]));
 
   return {
     header: meta.header || {},
@@ -85,6 +81,12 @@ export function isValidContent(data) {
   return (
     data &&
     typeof data === "object" &&
+    data.header &&
+    typeof data.header.title === "string" &&
+    (typeof data.header.image === "string" || data.header.image === undefined) &&
+    data.footer &&
+    typeof data.footer.title === "string" &&
+    typeof data.footer.text === "string" &&
     Array.isArray(data.form) &&
     data.form.every(
       (f) =>
