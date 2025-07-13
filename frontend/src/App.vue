@@ -4,7 +4,7 @@ import { useTheme } from "vuetify";
 import axios from "@/utils/axios";
 import DynamicForm from "./components/DynamicForm.vue";
 import AdminEditor from "./components/AdminEditor.vue";
-import "@/app.scss";
+import "@/App.scss";
 
 const authenticated = ref(false);
 const errorMessage = ref("");
