@@ -4,9 +4,10 @@ import { useTheme } from "vuetify";
 import axios from "@/utils/axios";
 import DynamicForm from "./components/DynamicForm.vue";
 import AdminEditor from "./components/AdminEditor.vue";
-import "./app.scss";
+import "@/app.scss";
 
 const authenticated = ref(false);
+const errorMessage = ref("");
 const role = ref(null);
 const showLogin = ref(false);
 const loginForm = ref({
@@ -32,6 +33,10 @@ if (token) {
   axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 }
 
+function showError(msg) {
+  errorMessage.value = msg;
+}
+
 // Interceptor token lejárat esetén
 axios.interceptors.response.use(
   (response) => response,
@@ -42,7 +47,7 @@ axios.interceptors.response.use(
       authenticated.value = false;
       role.value = null;
       showLogin.value = true;
-      alert("A munkamenet lejárt. Kérlek, jelentkezz be újra.");
+      showError("A munkamenet lejárt. Kérlek, jelentkezz be újra.");
     }
     return Promise.reject(error);
   },
@@ -71,12 +76,12 @@ function login() {
         role.value = res.data.role;
         showLogin.value = false;
       } else {
-        alert("Csak admin felhasználó léphet be az adminfelületre.");
+        showError("Csak admin felhasználó léphet be az adminfelületre.");
       }
     })
     .catch((err) => {
       console.error("Hiba a bejelentkezéskor:", err);
-      alert("Hibás bejelentkezési adatok.");
+      showError("Hibás bejelentkezési adatok.");
     });
 }
 
@@ -135,6 +140,16 @@ onMounted(() => {
 
     <v-main>
       <v-container>
+        <v-alert
+          v-if="errorMessage"
+          type="error"
+          dismissible
+          @input="errorMessage = ''"
+          class="mb-4"
+        >
+          {{ errorMessage }}
+        </v-alert>
+
         <!-- Bejelentkezés -->
         <div v-if="showLogin && !authenticated" class="login-section">
           <h2 class="text-h5 mb-4">Admin bejelentkezés</h2>

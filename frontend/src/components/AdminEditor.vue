@@ -6,6 +6,8 @@ import { v4 as uuidv4 } from "uuid";
 import "./AdminEditor.scss";
 import SubmissionList from "./SubmissionList.vue";
 
+const errorMessage = ref("");
+const successMessage = ref("");
 const props = defineProps({
   initialContent: Object,
 });
@@ -76,7 +78,7 @@ function addField() {
 function removeField(index) {
   const field = editableContent.value.form[index];
   if (field.name === "active") {
-    alert('A "Beküldhető" mező nem törölhető.');
+    errorMessage.value = 'A "Beküldhető" mező nem törölhető.';
     return;
   }
   editableContent.value.form.splice(index, 1);
@@ -96,7 +98,7 @@ function saveContent() {
           copy.options = JSON.parse(f.optionsText || "[]");
           copy.source = "";
         } catch (err) {
-          alert(`Hibás JSON az opcióknál: ${f.label || f.name}`);
+          errorMessage.value = `Hibás JSON az opcióknál: ${f.label || f.name}`;
           throw err;
         }
       } else if (f.sourceType === "api") {
@@ -114,7 +116,8 @@ function saveContent() {
       form,
     })
     .then(() => {
-      alert("Sikeres mentés");
+      successMessage.value = "Sikeres mentés";
+      setTimeout(() => (successMessage.value = ""), 4000);
       emit("content-updated", {
         ...editableContent.value,
         form,
@@ -122,7 +125,7 @@ function saveContent() {
     })
     .catch((err) => {
       console.error("Mentési hiba:", err);
-      alert("Mentési hiba.");
+      errorMessage.value = "Mentési hiba.";
     });
 }
 
@@ -377,6 +380,27 @@ onMounted(() => {
           </v-card>
 
           <v-btn type="submit" color="primary">Mentés</v-btn>
+          <v-alert
+            v-if="errorMessage"
+            type="error"
+            variant="tonal"
+            class="mt-4"
+            border="start"
+            @click="errorMessage = ''"
+          >
+            {{ errorMessage }}
+          </v-alert>
+
+          <v-alert
+            v-if="successMessage"
+            type="success"
+            variant="tonal"
+            class="mt-4"
+            border="start"
+            @click="successMessage = ''"
+          >
+            {{ successMessage }}
+          </v-alert>
         </v-form>
       </v-window-item>
 

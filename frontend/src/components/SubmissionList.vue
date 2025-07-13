@@ -5,6 +5,7 @@ import * as XLSX from "xlsx";
 import "./SubmissionList.scss";
 
 const submissions = ref([]);
+const errorMessage = ref("");
 
 const headers = ref([
   { text: "ID", value: "id" },
@@ -14,13 +15,17 @@ const headers = ref([
   { text: "Műveletek", value: "actions", sortable: false },
 ]);
 
+function showError(msg) {
+  errorMessage.value = msg;
+}
+
 function handleAuthError(error) {
   if (error.response?.status === 403) {
-    alert("A munkamenet lejárt. Kérlek, jelentkezz be újra.");
+    showError("A munkamenet lejárt. Kérlek, jelentkezz be újra.");
     localStorage.removeItem("jwt");
     window.location.href = "/admin";
   } else {
-    alert("Hiba történt a lekérdezés során.");
+    showError("Hiba történt a lekérdezés során.");
     console.error(error);
   }
 }
@@ -64,7 +69,7 @@ function exportCSV() {
     .then((res) => {
       const rows = getExportRows(res.data);
       if (!rows.length) {
-        alert("Nincs mit exportálni.");
+        showError("Nincs mit exportálni.");
         return;
       }
 
@@ -95,7 +100,7 @@ function exportXLSX() {
     .then((res) => {
       const rows = getExportRows(res.data);
       if (!rows.length) {
-        alert("Nincs mit exportálni.");
+        showError("Nincs mit exportálni.");
         return;
       }
 
@@ -131,6 +136,10 @@ onMounted(loadSubmissions);
     </v-card-title>
 
     <v-card-text>
+      <v-alert v-if="errorMessage" type="error" dismissible @input="errorMessage = ''" class="mb-4">
+        {{ errorMessage }}
+      </v-alert>
+
       <v-data-table
         :headers="headers"
         :items="submissions"

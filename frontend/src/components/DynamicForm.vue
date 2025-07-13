@@ -11,6 +11,7 @@ const props = defineProps({
   },
 });
 
+const successMessage = ref("");
 const formRef = ref(null);
 const formData = ref({});
 const selectOptions = ref({});
@@ -190,13 +191,18 @@ async function submitForm() {
 
   axios
     .post("/submit", { ...formData.value })
-    .then(() => alert("Sikeres beküldés!"))
+    .then(() => {
+      successMessage.value = "Sikeres beküldés!";
+      setTimeout(() => {
+        successMessage.value = "";
+      }, 5000);
+      errorMessages.value = [];
+    })
     .catch((err) => {
       console.error("Beküldési hiba:", err.response?.data || err);
 
       const fieldErrors = err.response?.data?.details?.fieldErrors;
       if (fieldErrors) {
-        // Összefűzzük a hibaüzeneteket szöveggé
         errorMessages.value = Object.entries(fieldErrors).flatMap(([field, messages]) =>
           messages.map((msg) => `${field}: ${msg}`),
         );
@@ -219,10 +225,10 @@ function login() {
         authenticated.value = true;
         showLogin.value = false;
       } else {
-        alert("Csak admin felhasználó léphet be.");
+        errorMessages.value = ["Csak admin felhasználó léphet be."];
       }
     })
-    .catch(() => alert("Hibás bejelentkezési adatok."));
+    .catch(() => (errorMessages.value = ["Hibás bejelentkezési adatok."]));
 }
 </script>
 
@@ -309,15 +315,29 @@ function login() {
 
             <v-btn :color="styles.color" @click="submitForm">{{ styles.buttonLabel }}</v-btn>
 
-            <v-alert
-              v-if="errorMessages.length"
-              type="error"
-              class="mt-4"
-              border="start"
-              variant="tonal"
-            >
-              <div v-for="(msg, i) in errorMessages" :key="i">{{ msg }}</div>
-            </v-alert>
+            <v-expand-transition>
+              <v-alert
+                v-if="errorMessages.length"
+                type="error"
+                class="mt-4"
+                border="start"
+                variant="tonal"
+              >
+                <div v-for="(msg, i) in errorMessages" :key="i">{{ msg }}</div>
+              </v-alert>
+            </v-expand-transition>
+
+            <v-expand-transition>
+              <v-alert
+                v-if="successMessage"
+                type="success"
+                class="mt-4"
+                border="start"
+                variant="tonal"
+              >
+                {{ successMessage }}
+              </v-alert>
+            </v-expand-transition>
           </v-form>
 
           <v-divider class="my-6"></v-divider>
