@@ -1,3 +1,10 @@
+## [1.2.10](https://github.com/tamasjuhasz84/minicms/compare/v1.2.9...v1.2.10) (2025-07-13)
+
+
+### Bug Fixes
+
+* **frontend:** typo fix ([2b481c9](https://github.com/tamasjuhasz84/minicms/commit/2b481c9b37b519862659336cb8bd64c7ed6d7052))
+
 ## [1.2.9](https://github.com/tamasjuhasz84/minicms/compare/v1.2.8...v1.2.9) (2025-07-13)
 
 
