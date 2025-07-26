@@ -1,4 +1,3 @@
-// migrate-db.js
 import { getDb } from "./utils/db.js";
 
 const db = await getDb();
@@ -16,6 +15,11 @@ async function migrate() {
   if (!hasColumn("description")) {
     await db.run(`ALTER TABLE content_fields ADD COLUMN description TEXT DEFAULT ''`);
     console.log("Hozzáadva: description");
+  }
+
+  if (!hasColumn("icon")) {
+    await db.run(`ALTER TABLE content_fields ADD COLUMN icon TEXT DEFAULT ''`);
+    console.log("Hozzáadva: icon");
   }
 
   console.log("Migráció kész.");

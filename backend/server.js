@@ -8,6 +8,7 @@ import submissionRoutes from "./routes/submissionRoutes.js";
 import contentRoutes from "./routes/contentRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import optionsRoutes from "./routes/optionsRoutes.js";
+import downloadRoutes from "./routes/downloadRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -43,6 +44,7 @@ app.use("/submissions", submissionRoutes);
 app.use("/content", contentRoutes);
 app.use("/", authRoutes);
 app.use("/options", optionsRoutes);
+app.use("/uploads", downloadRoutes);
 
 // HTTPS redirect (production only)
 if (process.env.NODE_ENV === "production") {

@@ -65,7 +65,6 @@ function addField() {
     label: "",
     name: "",
     type: "text",
-    placeholder: "",
     enabled: true,
     required: false,
     columns: 12,
@@ -107,6 +106,7 @@ function saveContent() {
     }
     nameSet.add(field.name);
   }
+
   const form = editableContent.value.form.map((f) => {
     const copy = { ...f };
 
@@ -114,8 +114,8 @@ function saveContent() {
       copy.name = generateName(copy.label);
     }
 
-    // Biztonság kedvéért biztosítjuk, hogy minden mezőnél legyen description mező
     copy.description = f.description || "";
+
     const optionBasedTypes = ["select", "checkbox-group", "radio"];
 
     if (optionBasedTypes.includes(copy.type)) {
@@ -131,6 +131,17 @@ function saveContent() {
         copy.options = [];
         copy.source = copy.source || "";
       }
+    }
+
+    if (f.icon) {
+      copy.icon = f.icon;
+    }
+
+    const isEmptyValidation = (v) =>
+      !v || (typeof v === "object" && Object.values(v).every((val) => val === null || val === ""));
+
+    if (isEmptyValidation(copy.validations)) {
+      delete copy.validations;
     }
 
     return copy;
@@ -174,7 +185,6 @@ onMounted(() => {
         label: f.label || "",
         name: f.name || generateName(f.label || ""),
         type: f.type || "text",
-        placeholder: f.placeholder || "",
         enabled: typeof f.enabled === "undefined" ? true : f.enabled,
         required: f.required || false,
         columns: typeof f.columns === "number" ? f.columns : 12,
@@ -367,13 +377,11 @@ onMounted(() => {
                           'date',
                           'time',
                           'divider',
-                          'headline',
                         ]"
                         label="Típus"
                         v-model="field.type"
                         class="mb-2"
                       />
-                      <v-text-field label="Placeholder" v-model="field.placeholder" class="mb-2" />
                       <v-switch v-model="field.enabled" label="Engedélyezve" class="mb-2" />
                       <v-switch v-model="field.required" label="Kötelező" class="mb-2" />
                       <v-select
@@ -423,14 +431,14 @@ onMounted(() => {
                       />
 
                       <v-text-field
-                        v-if="['slider', 'range', 'rating'].includes(field.type)"
+                        v-if="['slider', 'range'].includes(field.type)"
                         label="Minimum érték"
                         v-model.number="field.validations.min"
                         type="number"
                         class="mb-2"
                       />
                       <v-text-field
-                        v-if="['slider', 'range', 'rating'].includes(field.type)"
+                        v-if="['slider', 'range'].includes(field.type)"
                         label="Maximum érték"
                         v-model.number="field.validations.max"
                         type="number"

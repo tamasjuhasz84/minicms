@@ -18,7 +18,6 @@ export async function loadContent() {
       label: field.label,
       name: field.name,
       type: field.type,
-      placeholder: field.placeholder,
       enabled: !!field.enabled,
       required: !!field.required,
       validations: field.validations ? JSON.parse(field.validations) : {},
@@ -26,8 +25,9 @@ export async function loadContent() {
       sourceField: field.sourceField,
       sourceType: field.sourceType || "",
       options: field.options ? JSON.parse(field.options) : [],
-      columns: typeof field.columns === "number" ? field.columns : 12, // <- új mező
-      description: field.description || "", // <- leírás is visszatöltve
+      columns: typeof field.columns === "number" ? field.columns : 12,
+      description: field.description || "",
+      icon: field.icon || "",
     })),
   };
 }
@@ -56,12 +56,12 @@ export async function saveContent(data) {
   ]);
 
   const insertStmt = await db.prepare(`
-    INSERT INTO content_fields (
-      id, label, name, type, placeholder, enabled,
-      required, validations, source, sourceField, options, position, sourceType,
-      columns, description
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO content_fields (
+    id, label, name, type, enabled,
+    required, validations, source, sourceField, options, position, sourceType,
+    columns, description, icon
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   try {
@@ -72,7 +72,6 @@ export async function saveContent(data) {
         f.label,
         f.name,
         f.type,
-        f.placeholder,
         f.enabled ? 1 : 0,
         f.required ? 1 : 0,
         JSON.stringify(f.validations || {}),
@@ -83,6 +82,7 @@ export async function saveContent(data) {
         f.sourceType || "",
         typeof f.columns === "number" ? f.columns : 12,
         f.description || "",
+        f.icon || "",
       );
     }
   } finally {
@@ -104,7 +104,6 @@ export function isValidContent(data) {
     "slider",
     "range",
     "rating",
-    "headline",
     "divider",
     "checkbox",
     "checkbox-group",
@@ -127,4 +126,18 @@ export function isValidContent(data) {
         typeof f.label === "string" && typeof f.type === "string" && validTypes.includes(f.type),
     )
   );
+}
+
+export function cleanValidations(obj) {
+  if (!obj || typeof obj !== "object") return {};
+  const cleaned = {};
+
+  for (const key in obj) {
+    const val = obj[key];
+    if (val !== null && val !== "" && val !== undefined) {
+      cleaned[key] = val;
+    }
+  }
+
+  return cleaned;
 }

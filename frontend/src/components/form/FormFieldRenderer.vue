@@ -32,7 +32,6 @@ function onCheckboxGroupChange(checked, value) {
       v-if="['text', 'email', 'tel'].includes(field.type)"
       :type="field.type"
       :label="field.label"
-      :placeholder="field.placeholder || ''"
       :model-value="modelValue"
       :rules="rules"
       :error="!!errorMessages?.length"
@@ -46,7 +45,6 @@ function onCheckboxGroupChange(checked, value) {
       v-else-if="field.type === 'number'"
       type="number"
       :label="field.label"
-      :placeholder="field.placeholder || ''"
       :model-value="modelValue"
       :rules="rules"
       :error="!!errorMessages?.length"
@@ -59,7 +57,6 @@ function onCheckboxGroupChange(checked, value) {
     <v-textarea
       v-else-if="field.type === 'textarea'"
       :label="field.label"
-      :placeholder="field.placeholder || ''"
       :model-value="modelValue"
       :rules="rules"
       :error="!!errorMessages?.length"
@@ -76,7 +73,6 @@ function onCheckboxGroupChange(checked, value) {
       :items="items"
       item-title="text"
       item-value="value"
-      :placeholder="field.placeholder || ''"
       :model-value="modelValue"
       :rules="rules"
       :error="!!errorMessages?.length"
@@ -155,7 +151,8 @@ function onCheckboxGroupChange(checked, value) {
     <!-- Rating -->
     <v-rating
       v-else-if="field.type === 'rating'"
-      :length="field.max ?? 5"
+      :length="field.validations?.max ?? 5"
+      :item-icon="field.icon || 'mdi-star'"
       :model-value="modelValue"
       :error="!!errorMessages?.length"
       :error-messages="errorMessages"
@@ -218,19 +215,15 @@ function onCheckboxGroupChange(checked, value) {
     <v-file-input
       v-else-if="field.type === 'file'"
       :label="field.label"
+      :model-value="modelValue"
       show-size
       :error="!!errorMessages?.length"
       :error-messages="errorMessages"
       validate-on="input"
-      @change="emit('update:modelValue', $event?.target?.files?.[0] ?? $event)"
+      @update:modelValue="emit('update:modelValue', $event)"
     />
 
     <!-- Divider -->
     <v-divider v-else-if="field.type === 'divider'" class="my-4" />
-
-    <!-- Headline -->
-    <h3 v-else-if="field.type === 'headline'" class="text-h6 my-2">
-      {{ field.label }}
-    </h3>
   </div>
 </template>

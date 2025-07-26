@@ -7,3 +7,6 @@ node_modules/
 # IDE / editor fájlok
 .vscode/
 .idea/
+
+# files
+data/uploads/

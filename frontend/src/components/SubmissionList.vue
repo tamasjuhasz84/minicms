@@ -15,6 +15,51 @@ const headers = ref([
   { text: "Műveletek", value: "actions", sortable: false },
 ]);
 
+function downloadFile(filename) {
+  const jwt = localStorage.getItem("jwt");
+  if (!jwt) {
+    showError("Hiányzó jogosultság.");
+    return;
+  }
+
+  axios
+    .get(`/uploads/${filename}`, {
+      headers: { Authorization: `Bearer ${jwt}` },
+      responseType: "blob",
+    })
+    .then((res) => {
+      const blob = new Blob([res.data]);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    })
+    .catch(() => {
+      showError("A fájl letöltése sikertelen.");
+    });
+}
+
+function getFieldDisplayValue(value) {
+  if (typeof value === "string" && value.startsWith("/data/uploads/")) {
+    const filename = value.split("/").pop();
+    return `<button class="download-link" data-filename="${filename}">Letöltés</button>`;
+  }
+
+  if (Array.isArray(value)) {
+    return value.join(", ");
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "yes" : "no";
+  }
+
+  return String(value ?? "");
+}
+
 function showError(msg) {
   errorMessage.value = msg;
 }
@@ -112,6 +157,13 @@ function exportXLSX() {
     .catch(handleAuthError);
 }
 
+function handleClick(event) {
+  const el = event.target.closest("button.download-link");
+  if (el && el.dataset.filename) {
+    downloadFile(el.dataset.filename);
+  }
+}
+
 onMounted(loadSubmissions);
 </script>
 
@@ -159,7 +211,14 @@ onMounted(loadSubmissions);
         </template>
 
         <template v-slot:[`item.data`]="{ item }">
-          <pre>{{ JSON.stringify(JSON.parse(item.data), null, 2) }}</pre>
+          <div
+            v-for="(value, key) in JSON.parse(item.data)"
+            :key="key"
+            @click="handleClick($event)"
+          >
+            <strong>{{ key }}:</strong>
+            <span v-html="getFieldDisplayValue(value)" />
+          </div>
         </template>
 
         <template v-slot:[`item.actions`]="{ item }">

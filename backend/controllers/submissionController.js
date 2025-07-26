@@ -17,14 +17,27 @@ export async function submitForm(req, res) {
     const structure = await loadContent();
     const schemaShape = {};
 
-    const isEmpty = (val) => val === undefined || val === null || val === "";
+    const isEmpty = (val) => val === "" || val === null || val === undefined;
 
     for (const field of structure.form) {
+      if (field.type === "divider") {
+        continue;
+      }
       const isRequired = field.required === true;
       let base;
 
       switch (field.type) {
         case "text":
+          base = z.string();
+          break;
+
+        case "rating":
+          base = z.preprocess((val) => {
+            const num = Number(val);
+            return isNaN(num) ? undefined : num;
+          }, z.number().int().min(1).max(5));
+          break;
+
         case "select":
           base = z.string();
           break;
@@ -46,20 +59,17 @@ export async function submitForm(req, res) {
 
         case "checkbox":
         case "switch":
-          base = z.boolean();
+          base = z.preprocess(
+            (val) => (val === "true" ? true : val === "false" ? false : val),
+            z.boolean(),
+          );
+
           break;
 
         case "file":
-          base = z
-            .object({
-              name: z.string(),
-              size: z.number().max(5 * 1024 * 1024, `${field.label} túl nagy fájl.`),
-              type: z.string(),
-              base64: z.string().startsWith("data:"),
-            })
-            .nullable();
+          base = z.string(); // fájl elérési út mentése stringként (pl. "/data/uploads/fajl.pdf")
           if (isRequired) {
-            base = base.refine((val) => val !== null, {
+            base = base.refine((val) => !isEmpty(val), {
               message: `${field.label} kötelező fájl.`,
             });
           }
@@ -77,14 +87,12 @@ export async function submitForm(req, res) {
         base = base.optional();
       }
 
-      // required validáció, ha nem file
       if (isRequired && !["file"].includes(field.type)) {
         base = base.refine((val) => !isEmpty(val), {
           message: `${field.label} kötelező.`,
         });
       }
 
-      // MIN
       const minVal = field.validations?.min;
       if (minVal !== undefined && minVal !== null && minVal !== "") {
         base = base.refine(
@@ -103,7 +111,6 @@ export async function submitForm(req, res) {
         );
       }
 
-      // MAX
       const maxVal = field.validations?.max;
       if (maxVal !== undefined && maxVal !== null && maxVal !== "") {
         base = base.refine(
@@ -122,7 +129,6 @@ export async function submitForm(req, res) {
         );
       }
 
-      // REGEX
       if (field.validations?.regex) {
         base = base.refine(
           (val) => {
@@ -139,8 +145,30 @@ export async function submitForm(req, res) {
       schemaShape[field.name] = base;
     }
 
+    const formData = { ...req.body };
+
+    // Fájlok hozzáadása a beküldött adathoz
+    if (req.files) {
+      for (const file of req.files) {
+        const fieldName = file.fieldname;
+        const fileSizeLimit = 5 * 1024 * 1024; // 5 MB
+
+        if (file.size > fileSizeLimit) {
+          return res.status(400).json({
+            success: false,
+            error: "Validációs hiba",
+            details: {
+              [fieldName]: [`${file.originalname} túl nagy fájl. Maximum 5MB.`],
+            },
+          });
+        }
+
+        formData[fieldName] = `/data/uploads/${file.filename}`;
+      }
+    }
+
     const validator = z.object(schemaShape);
-    const parsed = validator.safeParse(req.body);
+    const parsed = validator.safeParse(formData);
 
     if (!parsed.success) {
       return res.status(400).json({

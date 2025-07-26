@@ -51,7 +51,11 @@ watch(
   () => {
     fieldMap.value = props.formFields
       .filter((f) => f.enabled !== false)
-      .map((f) => ({ ...f, uuid: uuidv4(), columns: f.columns || 1 }));
+      .map((f) => ({
+        ...f,
+        uuid: uuidv4(),
+        columns: f.columns || 1,
+      }));
     initFormData();
     loadSelects();
   },

@@ -20,7 +20,7 @@ export function setupFormLogic(
           formData.value[field.name] = [];
           break;
         default:
-          formData.value[field.name] = "";
+          formData.value[field.name] = field.type === "file" ? null : "";
       }
     });
   }
@@ -106,10 +106,16 @@ export function setupFormLogic(
 
   function getValidationRules(field) {
     const rules = [];
-    const isEmpty = (val) => val === "" || val === null || val === undefined;
+    const isEmpty = (val) =>
+      val === "" || val === null || val === undefined || (val instanceof File && val.size === 0);
 
     if (field.required) {
-      rules.push((v) => !isEmpty(v) || `${field.label} kötelező.`);
+      rules.push((v) => {
+        if (field.type === "checkbox") return v === true || "Kötelező mező";
+        if (field.type === "checkbox-group") return (v && v.length > 0) || "Kötelező mező";
+        if (field.type === "file") return v instanceof File || "Kötelező mező";
+        return !!v?.toString().trim() || "Kötelező mező";
+      });
     }
 
     rules.push((v) => {
@@ -141,7 +147,7 @@ export function setupFormLogic(
         }
 
         if (field.type === "email") {
-          const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(v)) return `Nem érvényes email.`;
         }
 
@@ -173,8 +179,22 @@ export function setupFormLogic(
       return;
     }
 
+    const formPayload = new FormData();
+
+    for (const [key, value] of Object.entries(formData.value)) {
+      if (value instanceof File) {
+        formPayload.append(key, value);
+      } else if (Array.isArray(value)) {
+        value.forEach((v) => formPayload.append(key, v));
+      } else {
+        formPayload.append(key, value);
+      }
+    }
+
     axios
-      .post("/submit", { ...formData.value })
+      .post("/submit", formPayload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
       .then(() => {
         successMessage.value = "Sikeres beküldés!";
         setTimeout(() => {

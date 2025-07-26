@@ -1,16 +1,14 @@
 ## [1.2.11](https://github.com/tamasjuhasz84/minicms/compare/v1.2.10...v1.2.11) (2025-07-26)
 
-
 ### Bug Fixes
 
-* **frontend,backend:** refactor ([c9474d1](https://github.com/tamasjuhasz84/minicms/commit/c9474d13a12534176e65c96fb7dfed33b1e190bc))
+- **frontend,backend:** refactor ([c9474d1](https://github.com/tamasjuhasz84/minicms/commit/c9474d13a12534176e65c96fb7dfed33b1e190bc))
 
 ## [1.2.10](https://github.com/tamasjuhasz84/minicms/compare/v1.2.9...v1.2.10) (2025-07-13)
 
-
 ### Bug Fixes
 
-* **frontend:** typo fix ([2b481c9](https://github.com/tamasjuhasz84/minicms/commit/2b481c9b37b519862659336cb8bd64c7ed6d7052))
+- **frontend:** typo fix ([2b481c9](https://github.com/tamasjuhasz84/minicms/commit/2b481c9b37b519862659336cb8bd64c7ed6d7052))
 
 ## [1.2.9](https://github.com/tamasjuhasz84/minicms/compare/v1.2.8...v1.2.9) (2025-07-13)
 

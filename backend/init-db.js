@@ -13,7 +13,6 @@ await db.exec(`
     label TEXT NOT NULL,
     name TEXT,
     type TEXT NOT NULL,
-    placeholder TEXT,
     enabled INTEGER DEFAULT 1,
     required INTEGER DEFAULT 0,
     validations TEXT,
