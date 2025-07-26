@@ -1,3 +1,10 @@
+## [1.2.11](https://github.com/tamasjuhasz84/minicms/compare/v1.2.10...v1.2.11) (2025-07-26)
+
+
+### Bug Fixes
+
+* **frontend,backend:** refactor ([c9474d1](https://github.com/tamasjuhasz84/minicms/commit/c9474d13a12534176e65c96fb7dfed33b1e190bc))
+
 ## [1.2.10](https://github.com/tamasjuhasz84/minicms/compare/v1.2.9...v1.2.10) (2025-07-13)
 
 
