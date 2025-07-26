@@ -1,3 +1,10 @@
+## [1.0.7](https://github.com/tamasjuhasz84/minicms/compare/backend-v1.0.6...backend-v1.0.7) (2025-07-26)
+
+
+### Bug Fixes
+
+* **frontend:** change test ([8edc5c9](https://github.com/tamasjuhasz84/minicms/commit/8edc5c9b5d8592a2a55d79b8eba0190ac9fcf4f0))
+
 ## [1.0.6](https://github.com/tamasjuhasz84/minicms/compare/backend-v1.0.5...backend-v1.0.6) (2025-07-26)
 
 
