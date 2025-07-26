@@ -1,3 +1,13 @@
+## [1.0.6](https://github.com/tamasjuhasz84/minicms/compare/backend-v1.0.5...backend-v1.0.6) (2025-07-26)
+
+
+### Bug Fixes
+
+* **frontend,backend:** refactor ([8176250](https://github.com/tamasjuhasz84/minicms/commit/81762507d9f23fcf024847c37662ba2c76e39415))
+* **frontend,backend:** refactor ([c9474d1](https://github.com/tamasjuhasz84/minicms/commit/c9474d13a12534176e65c96fb7dfed33b1e190bc))
+* **frontend:** error messages ([6381e50](https://github.com/tamasjuhasz84/minicms/commit/6381e5019b4028c4fc8f8c94f8e47e8eee65fb1a))
+* **frontend:** typo fix ([2b481c9](https://github.com/tamasjuhasz84/minicms/commit/2b481c9b37b519862659336cb8bd64c7ed6d7052))
+
 ## [1.0.5](https://github.com/tamasjuhasz84/minicms/compare/backend-v1.0.4...backend-v1.0.5) (2025-07-12)
 
 ### Bug Fixes
