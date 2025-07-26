@@ -1,10 +1,9 @@
 ## [1.0.5](https://github.com/tamasjuhasz84/minicms/compare/backend-v1.0.4...backend-v1.0.5) (2025-07-12)
 
-
 ### Bug Fixes
 
-* **backend, frontend:** fix admin ([04c6780](https://github.com/tamasjuhasz84/minicms/commit/04c6780b20e5c084c6f558800f75fc91a39d7121))
-* **frontend, backend:** change theme ([b9d4e01](https://github.com/tamasjuhasz84/minicms/commit/b9d4e012ba9507c3a3d36927f4ab2a52dbe32c32))
+- **backend, frontend:** fix admin ([04c6780](https://github.com/tamasjuhasz84/minicms/commit/04c6780b20e5c084c6f558800f75fc91a39d7121))
+- **frontend, backend:** change theme ([b9d4e01](https://github.com/tamasjuhasz84/minicms/commit/b9d4e012ba9507c3a3d36927f4ab2a52dbe32c32))
 
 ## [1.0.4](https://github.com/tamasjuhasz84/minicms/compare/backend-v1.0.3...backend-v1.0.4) (2025-07-12)
 

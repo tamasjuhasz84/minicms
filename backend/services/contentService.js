@@ -11,6 +11,8 @@ export async function loadContent() {
   return {
     header: meta.header || {},
     footer: meta.footer || {},
+    description: meta.description || { text: "" },
+    styles: meta.styles || {},
     form: form.map((field) => ({
       id: field.id,
       label: field.label,
@@ -24,15 +26,18 @@ export async function loadContent() {
       sourceField: field.sourceField,
       sourceType: field.sourceType || "",
       options: field.options ? JSON.parse(field.options) : [],
+      columns: typeof field.columns === "number" ? field.columns : 12, // <- új mező
+      description: field.description || "", // <- leírás is visszatöltve
     })),
   };
 }
 
 export async function saveContent(data) {
   const db = await getDb();
-  const { header = {}, footer = {}, form = [] } = data;
+  const { header = {}, footer = {}, styles = {}, description = {}, form = [] } = data;
 
   await db.run("DELETE FROM content_fields");
+
   await db.run("INSERT OR REPLACE INTO content_meta (key, value) VALUES (?, ?)", [
     "header",
     JSON.stringify(header),
@@ -41,13 +46,22 @@ export async function saveContent(data) {
     "footer",
     JSON.stringify(footer),
   ]);
+  await db.run("INSERT OR REPLACE INTO content_meta (key, value) VALUES (?, ?)", [
+    "styles",
+    JSON.stringify(styles),
+  ]);
+  await db.run("INSERT OR REPLACE INTO content_meta (key, value) VALUES (?, ?)", [
+    "description",
+    JSON.stringify(description),
+  ]);
 
   const insertStmt = await db.prepare(`
     INSERT INTO content_fields (
       id, label, name, type, placeholder, enabled,
-      required, validations, source, sourceField, options, position, sourceType
+      required, validations, source, sourceField, options, position, sourceType,
+      columns, description
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   try {
@@ -67,6 +81,8 @@ export async function saveContent(data) {
         JSON.stringify(f.options || []),
         index,
         f.sourceType || "",
+        typeof f.columns === "number" ? f.columns : 12,
+        f.description || "",
       );
     }
   } finally {
@@ -75,6 +91,27 @@ export async function saveContent(data) {
 }
 
 export function isValidContent(data) {
+  const validTypes = [
+    "text",
+    "textarea",
+    "email",
+    "tel",
+    "date",
+    "file",
+    "select",
+    "switch",
+    "number",
+    "slider",
+    "range",
+    "rating",
+    "headline",
+    "divider",
+    "checkbox",
+    "checkbox-group",
+    "radio",
+    "time",
+  ];
+
   return (
     data &&
     typeof data === "object" &&
@@ -87,9 +124,7 @@ export function isValidContent(data) {
     Array.isArray(data.form) &&
     data.form.every(
       (f) =>
-        typeof f.label === "string" &&
-        typeof f.type === "string" &&
-        ["text", "select", "switch", "number"].includes(f.type),
+        typeof f.label === "string" && typeof f.type === "string" && validTypes.includes(f.type),
     )
   );
 }

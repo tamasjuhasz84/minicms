@@ -159,7 +159,7 @@ onMounted(loadSubmissions);
         </template>
 
         <template v-slot:[`item.data`]="{ item }">
-          <pre>{{ JSON.parse(item.data) }}</pre>
+          <pre>{{ JSON.stringify(JSON.parse(item.data), null, 2) }}</pre>
         </template>
 
         <template v-slot:[`item.actions`]="{ item }">

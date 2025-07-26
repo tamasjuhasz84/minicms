@@ -33,9 +33,12 @@ if (token) {
   axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 }
 
-function showError(msg) {
+const showError = (msg) => {
   errorMessage.value = msg;
-}
+  setTimeout(() => {
+    errorMessage.value = "";
+  }, 3000);
+};
 
 // Interceptor token lejárat esetén
 axios.interceptors.response.use(

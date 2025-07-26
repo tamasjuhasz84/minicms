@@ -1,10 +1,9 @@
 ## [1.2.9](https://github.com/tamasjuhasz84/minicms/compare/v1.2.8...v1.2.9) (2025-07-13)
 
-
 ### Bug Fixes
 
-* **frontend, backend:** change theme ([b9d4e01](https://github.com/tamasjuhasz84/minicms/commit/b9d4e012ba9507c3a3d36927f4ab2a52dbe32c32))
-* **frontend:** error messages ([6381e50](https://github.com/tamasjuhasz84/minicms/commit/6381e5019b4028c4fc8f8c94f8e47e8eee65fb1a))
+- **frontend, backend:** change theme ([b9d4e01](https://github.com/tamasjuhasz84/minicms/commit/b9d4e012ba9507c3a3d36927f4ab2a52dbe32c32))
+- **frontend:** error messages ([6381e50](https://github.com/tamasjuhasz84/minicms/commit/6381e5019b4028c4fc8f8c94f8e47e8eee65fb1a))
 
 ## [1.2.8](https://github.com/tamasjuhasz84/minicms/compare/v1.2.7...v1.2.8) (2025-07-12)
 

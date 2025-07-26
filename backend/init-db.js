@@ -21,7 +21,9 @@ await db.exec(`
     sourceField TEXT,
     options TEXT,
     position INTEGER,
-    sourceType TEXT
+    sourceType TEXT,
+    columns INTEGER DEFAULT 12,
+    description TEXT DEFAULT ''
   );
 
   CREATE TABLE IF NOT EXISTS submissions (

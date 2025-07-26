@@ -4,34 +4,32 @@
   .header-card h2 {
     font-size: var(--form-heading-font, 1.5rem);
     font-family: inherit;
-    color: #000 !important; // ez biztosítja, hogy mindig látszik
+    color: #000 !important;
   }
 
-  .form-field {
-    margin-bottom: 1rem;
+  // ⬇️ Ezek a mezők bármilyen wrapper nélkül is működni fognak
+  .v-text-field .v-field,
+  .v-textarea .v-field,
+  .v-select .v-field,
+  .v-file-input .v-field {
+    background-color: var(--form-bg) !important;
+  }
 
-    .v-field,
-    .v-field__input,
-    .v-select__selection-text {
-      background-color: var(--form-bg) !important;
-    }
+  .v-field__input,
+  .v-select__selection-text {
+    font-size: var(--form-input-font) !important;
+  }
 
-    .v-field__input,
-    .v-select__selection-text {
-      font-size: var(--form-input-font) !important;
-    }
+  .v-label.v-field-label {
+    font-size: var(--form-label-font) !important;
+  }
 
-    .v-label.v-field-label {
-      font-size: var(--form-label-font) !important;
-    }
+  .v-switch .v-label {
+    font-size: var(--form-label-font) !important;
+  }
 
-    .v-switch .v-label {
-      font-size: var(--form-label-font) !important;
-    }
-
-    .v-overlay__content {
-      font-size: var(--form-input-font);
-    }
+  .v-overlay__content {
+    font-size: var(--form-input-font);
   }
 
   .v-btn {

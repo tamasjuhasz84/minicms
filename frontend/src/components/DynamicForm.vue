@@ -1,7 +1,9 @@
 <script setup>
+import FormSection from "@/components/form/FormSection.vue";
 import { ref, computed, watch, onMounted } from "vue";
-import axios from "@/utils/axios";
 import { v4 as uuidv4 } from "uuid";
+import { setupFormLogic } from "@/composables/useFormLogic";
+import axios from "@/utils/axios";
 import "./DynamicForm.scss";
 
 const props = defineProps({
@@ -17,6 +19,7 @@ const formData = ref({});
 const selectOptions = ref({});
 const header = ref({});
 const footer = ref({});
+const description = ref({ text: "" });
 const styles = ref({
   color: "#1976d2",
   fontSize: "16px",
@@ -25,18 +28,30 @@ const styles = ref({
 const showLogin = ref(false);
 const authenticated = ref(false);
 const loginForm = ref({ username: "", password: "" });
-const errorMessages = ref([]);
+const errorMessages = ref({});
 
-const enabledFields = computed(() => {
-  if (!Array.isArray(props.formFields)) return [];
-  return props.formFields
-    .filter((f) => f.enabled !== false)
-    .map((field) => ({ ...field, uuid: uuidv4() }));
+const fieldMap = ref([]);
+const enabledFields = computed(() => fieldMap.value);
+
+const sectionedFields = computed(() => {
+  const groups = {};
+  enabledFields.value.forEach((field) => {
+    const section = field.section || "Alapértelmezett";
+    if (!groups[section]) groups[section] = [];
+    groups[section].push(field);
+  });
+  return groups;
 });
+
+const { initFormData, loadSelects, getSelectItems, getValidationRules, submitForm } =
+  setupFormLogic(enabledFields, formData, formRef, selectOptions, errorMessages, successMessage);
 
 watch(
   () => props.formFields,
   () => {
+    fieldMap.value = props.formFields
+      .filter((f) => f.enabled !== false)
+      .map((f) => ({ ...f, uuid: uuidv4(), columns: f.columns || 1 }));
     initFormData();
     loadSelects();
   },
@@ -47,6 +62,7 @@ onMounted(() => {
   axios.get("/content").then((res) => {
     header.value = res.data.header || {};
     footer.value = res.data.footer || {};
+    description.value = res.data.description || {};
     const incoming = res.data.styles || styles.value;
     styles.value = {
       ...incoming,
@@ -54,182 +70,6 @@ onMounted(() => {
     };
   });
 });
-
-function initFormData() {
-  formData.value = {};
-  if (!Array.isArray(props.formFields)) return;
-  props.formFields.forEach((field) => {
-    formData.value[field.name] = field.type === "switch" ? false : "";
-  });
-}
-
-function loadSelects() {
-  if (!Array.isArray(props.formFields)) return;
-  const apiFields = props.formFields.filter((f) => f.type === "select" && f.source);
-  apiFields.forEach((field) => {
-    axios
-      .get(field.source)
-      .then((res) => {
-        let options = [];
-
-        if (Array.isArray(res.data)) {
-          // Közvetlen tömb válasz
-          options = res.data;
-        } else if (field.sourceField && Array.isArray(res.data[field.sourceField])) {
-          // Ha megadott mezőn belül van a tömb
-          options = res.data[field.sourceField];
-        } else if (typeof res.data === "object") {
-          // Egyéb objektum: keressünk tömböt benne
-          const values = Object.values(res.data);
-          options = values.find((v) => Array.isArray(v)) || [];
-        }
-
-        selectOptions.value[field.name] = options;
-      })
-      .catch((err) => {
-        console.error(`Hiba a(z) ${field.source} betöltésekor`, err);
-      });
-  });
-}
-
-function getSelectItems(field) {
-  // 1. CMS-opciók
-  if (Array.isArray(field.options) && field.options.length > 0) {
-    return field.options.map((opt) => ({ text: opt.text, value: opt.value }));
-  }
-
-  // 2. Mentett options objektumból
-  if (typeof field.options === "object" && field.options !== null) {
-    const array = Object.values(field.options).find((v) => Array.isArray(v));
-    if (array) {
-      return array.map((opt) => ({ text: opt.text, value: opt.value }));
-    }
-  }
-
-  // 3. API-ból töltött értékek
-  const data = selectOptions.value[field.name];
-  if (Array.isArray(data)) {
-    return data.map((opt) => ({ text: opt.text, value: opt.value }));
-  }
-
-  // 4. Semmi
-  return [];
-}
-
-function getValidationRules(field) {
-  const rules = [];
-
-  const isEmpty = (val) => val === "" || val === null || val === undefined;
-
-  // Kötelező mező ellenőrzése
-  if (field.required) {
-    rules.push((v) => !isEmpty(v) || `${field.label} kötelező.`);
-  }
-
-  // Minden egyéb validáció csak akkor fusson, ha nem üres (vagy ha kötelező)
-  rules.push((v) => {
-    if (!field.required && isEmpty(v)) return true;
-
-    // Szám típus
-    if (field.type === "number") {
-      const num = Number(v);
-      if (isNaN(num)) return `${field.label} nem érvényes szám.`;
-      if (field.validations?.min != null && num < field.validations.min)
-        return `Minimum érték: ${field.validations.min}`;
-      if (field.validations?.max != null && num > field.validations.max)
-        return `Maximum érték: ${field.validations.max}`;
-    }
-
-    // Szöveg típus
-    if (typeof v === "string") {
-      if (field.validations?.min != null && v.length < field.validations.min)
-        return `Minimum ${field.validations.min} karakter.`;
-      if (field.validations?.max != null && v.length > field.validations.max)
-        return `Maximum ${field.validations.max} karakter.`;
-
-      if (field.validations?.pattern) {
-        try {
-          const regex = new RegExp(field.validations.pattern);
-          if (!regex.test(v)) return `Hibás formátum`;
-        } catch (e) {
-          console.warn("Érvénytelen regex minta:", field.validations.pattern, e);
-        }
-      }
-
-      if (field.type === "email") {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(v)) return `Nem érvényes email.`;
-      }
-
-      if (field.type === "tel") {
-        const telRegex = /^[0-9+ ]{6,20}$/;
-        if (!telRegex.test(v)) return `Nem érvényes telefonszám.`;
-      }
-    }
-
-    return true;
-  });
-
-  return rules;
-}
-
-async function submitForm() {
-  errorMessages.value = [];
-
-  const result = await formRef.value?.validate();
-  if (!result?.valid) {
-    errorMessages.value.push("Kérjük, javítsd a hibás mezőket.");
-    return;
-  }
-
-  if (!formData.value.active) {
-    errorMessages.value.push(
-      'A beküldés csak akkor engedélyezett, ha a "Beküldhető" mező be van kapcsolva.',
-    );
-    return;
-  }
-
-  axios
-    .post("/submit", { ...formData.value })
-    .then(() => {
-      successMessage.value = "Sikeres beküldés!";
-      setTimeout(() => {
-        successMessage.value = "";
-      }, 5000);
-      errorMessages.value = [];
-    })
-    .catch((err) => {
-      console.error("Beküldési hiba:", err.response?.data || err);
-
-      const fieldErrors = err.response?.data?.details?.fieldErrors;
-      if (fieldErrors) {
-        errorMessages.value = Object.entries(fieldErrors).flatMap(([field, messages]) =>
-          messages.map((msg) => `${field}: ${msg}`),
-        );
-      } else {
-        errorMessages.value.push("Ismeretlen hiba történt a beküldéskor.");
-      }
-    });
-}
-
-function login() {
-  axios
-    .post("/login", loginForm.value)
-    .then((res) => {
-      const token = res.data.token;
-      if (token) {
-        localStorage.setItem("jwt", token);
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      }
-      if (res.data.role === "admin") {
-        authenticated.value = true;
-        showLogin.value = false;
-      } else {
-        errorMessages.value = ["Csak admin felhasználó léphet be."];
-      }
-    })
-    .catch(() => (errorMessages.value = ["Hibás bejelentkezési adatok."]));
-}
 </script>
 
 <template>
@@ -269,49 +109,21 @@ function login() {
             <h2 class="text-h5 mb-2">{{ header.title }}</h2>
           </v-card>
 
-          <v-form ref="formRef">
-            <div
-              v-for="field in enabledFields"
-              :key="field.uuid"
-              class="form-field"
-              :style="{ fontSize: styles.fontSize }"
-            >
-              <v-text-field
-                v-if="field.type === 'text'"
-                :label="field.label"
-                v-model="formData[field.name]"
-                :placeholder="field.placeholder || ''"
-                :rules="getValidationRules(field)"
-              />
-              <v-text-field
-                v-else-if="field.type === 'number'"
-                type="number"
-                :label="field.label"
-                v-model.number="formData[field.name]"
-                :placeholder="field.placeholder || ''"
-                :rules="getValidationRules(field)"
-              />
-              <v-select
-                v-else-if="field.type === 'select'"
-                :label="field.label"
-                :items="getSelectItems(field)"
-                item-title="text"
-                item-value="value"
-                v-model="formData[field.name]"
-                :placeholder="field.placeholder || ''"
-                :rules="getValidationRules(field)"
-              />
-              <v-row v-else-if="field.type === 'switch'" class="my-2">
-                <v-col cols="12">
-                  <v-switch
-                    v-model="formData[field.name]"
-                    :label="field.label"
-                    color="primary"
-                    inset
-                  />
-                </v-col>
-              </v-row>
+          <v-card v-if="description.text" class="pa-4 mb-4">
+            <div class="text-body-1" style="white-space: pre-line">
+              {{ description.text }}
             </div>
+          </v-card>
+
+          <v-form ref="formRef">
+            <FormSection
+              v-for="(fields, title) in sectionedFields"
+              :key="title"
+              :section="{ name: title, fields }"
+              v-model="formData"
+              :get-rules="getValidationRules"
+              :get-items="getSelectItems"
+            />
 
             <v-btn :color="styles.color" @click="submitForm">{{ styles.buttonLabel }}</v-btn>
 
@@ -345,9 +157,7 @@ function login() {
             <div v-if="footer.title" class="text-h6 font-weight-medium opacity-90 px-4">
               {{ footer.title }}
             </div>
-
             <v-divider class="my-2" thickness="2" width="50"></v-divider>
-
             <div v-if="footer.text" class="text-caption font-weight-regular opacity-60 px-4">
               {{ footer.text }}
             </div>

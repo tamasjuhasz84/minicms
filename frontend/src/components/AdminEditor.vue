@@ -8,17 +8,14 @@ import SubmissionList from "./SubmissionList.vue";
 
 const errorMessage = ref("");
 const successMessage = ref("");
-const props = defineProps({
-  initialContent: Object,
-});
-
+const props = defineProps({ initialContent: Object });
 const emit = defineEmits(["content-updated"]);
-
 const tab = ref(0);
 const expandedFields = ref(new Set());
 
 const editableContent = ref({
   header: { title: "", image: "" },
+  description: { text: "" },
   footer: { title: "", text: "" },
   form: [],
   styles: {
@@ -32,12 +29,16 @@ const editableContent = ref({
   },
 });
 
+const columnWidthOptions = [
+  { label: "Teljes szélesség", value: 12 },
+  { label: "Háromnegyed", value: 9 },
+  { label: "Fél", value: 6 },
+  { label: "Egyharmad", value: 4 },
+  { label: "Negyed", value: 3 },
+];
+
 function toggleExpand(id) {
-  if (expandedFields.value.has(id)) {
-    expandedFields.value.delete(id);
-  } else {
-    expandedFields.value.add(id);
-  }
+  expandedFields.value.has(id) ? expandedFields.value.delete(id) : expandedFields.value.add(id);
 }
 
 function isExpanded(id) {
@@ -52,6 +53,11 @@ function generateName(label) {
     .slice(0, 30);
 }
 
+function isNameUnique(name, id) {
+  const all = editableContent.value.form;
+  return all.filter((f) => f.name === name && f.id !== id).length === 0;
+}
+
 function addField() {
   const id = uuidv4();
   editableContent.value.form.push({
@@ -62,9 +68,12 @@ function addField() {
     placeholder: "",
     enabled: true,
     required: false,
+    columns: 12,
+    description: "",
     validations: {
       min: null,
       max: null,
+      step: null,
       pattern: "",
       maxFileSize: null,
     },
@@ -72,6 +81,7 @@ function addField() {
     optionsText: "",
     source: "",
     sourceField: "",
+    icon: "",
   });
 }
 
@@ -85,6 +95,18 @@ function removeField(index) {
 }
 
 function saveContent() {
+  const nameSet = new Set();
+  for (const field of editableContent.value.form) {
+    if (!field.name || field.name.trim() === "") {
+      errorMessage.value = `A(z) "${field.label || "névtelen"}" mezőhöz nincs megadva technikai név.`;
+      return;
+    }
+    if (nameSet.has(field.name)) {
+      errorMessage.value = `A(z) "${field.name}" név több mezőnél is szerepel. A technikai neveknek egyedinek kell lenniük.`;
+      return;
+    }
+    nameSet.add(field.name);
+  }
   const form = editableContent.value.form.map((f) => {
     const copy = { ...f };
 
@@ -92,18 +114,22 @@ function saveContent() {
       copy.name = generateName(copy.label);
     }
 
-    if (f.type === "select") {
-      if (f.sourceType === "cms") {
+    // Biztonság kedvéért biztosítjuk, hogy minden mezőnél legyen description mező
+    copy.description = f.description || "";
+    const optionBasedTypes = ["select", "checkbox-group", "radio"];
+
+    if (optionBasedTypes.includes(copy.type)) {
+      if (copy.sourceType === "cms") {
         try {
-          copy.options = JSON.parse(f.optionsText || "[]");
+          copy.options = JSON.parse(copy.optionsText || "[]");
           copy.source = "";
         } catch (err) {
-          errorMessage.value = `Hibás JSON az opcióknál: ${f.label || f.name}`;
+          errorMessage.value = `Hibás JSON az opcióknál: ${copy.label || copy.name}`;
           throw err;
         }
-      } else if (f.sourceType === "api") {
+      } else if (copy.sourceType === "api") {
         copy.options = [];
-        copy.source = f.source || "";
+        copy.source = copy.source || "";
       }
     }
 
@@ -118,10 +144,7 @@ function saveContent() {
     .then(() => {
       successMessage.value = "Sikeres mentés";
       setTimeout(() => (successMessage.value = ""), 4000);
-      emit("content-updated", {
-        ...editableContent.value,
-        form,
-      });
+      emit("content-updated", { ...editableContent.value, form });
     })
     .catch((err) => {
       console.error("Mentési hiba:", err);
@@ -141,6 +164,7 @@ onMounted(() => {
         type: "switch",
         enabled: true,
         required: false,
+        description: "", // új mező
       });
     }
 
@@ -153,16 +177,22 @@ onMounted(() => {
         placeholder: f.placeholder || "",
         enabled: typeof f.enabled === "undefined" ? true : f.enabled,
         required: f.required || false,
-        validations: f.validations || {
-          min: null,
-          max: null,
-          pattern: "",
-          maxFileSize: null,
+        columns: typeof f.columns === "number" ? f.columns : 12,
+        description: f.description || "",
+        validations: {
+          min: f.validations?.min ?? null,
+          max: f.validations?.max ?? null,
+          step: f.validations?.step ?? null,
+          pattern: f.validations?.pattern || "",
+          maxFileSize: f.validations?.maxFileSize ?? null,
         },
-        optionsText: "",
-        sourceType: "",
+        sourceType: f.sourceType || "",
+        optionsText: Array.isArray(f.options)
+          ? JSON.stringify(f.options, null, 2)
+          : f.optionsText || "",
         source: f.source || "",
         sourceField: f.sourceField || "",
+        icon: f.icon || "",
       };
 
       if (f.type === "select") {
@@ -173,7 +203,7 @@ onMounted(() => {
           field.sourceType = "cms";
           field.optionsText = JSON.stringify(f.options, null, 2);
         } else {
-          field.sourceType = "cms"; // fallback
+          field.sourceType = "cms";
           field.optionsText = "[]";
         }
       }
@@ -184,16 +214,9 @@ onMounted(() => {
     editableContent.value = {
       header: content.header || { title: "", image: "" },
       footer: content.footer || { title: "", text: "" },
+      description: content.description || { text: "" },
       form: content.form,
-      styles: content.styles || {
-        color: "#1976d2",
-        backgroundColor: "#f5f5f5",
-        buttonFontSize: "16px",
-        inputFontSize: "14px",
-        labelFontSize: "13px",
-        fontFamily: "Roboto, sans-serif",
-        buttonLabel: "Küldés",
-      },
+      styles: content.styles || editableContent.value.styles,
     };
   }
 });
@@ -209,6 +232,7 @@ onMounted(() => {
     <v-window v-model="tab">
       <v-window-item :value="0">
         <v-form @submit.prevent="saveContent">
+          <!-- Header -->
           <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-2">Fejléc</h3>
             <v-text-field label="Cím" v-model="editableContent.header.title" />
@@ -216,11 +240,22 @@ onMounted(() => {
           </v-card>
 
           <v-card class="pa-4 mb-6">
+            <h3 class="text-subtitle-1 mb-2">Bevezető leírás</h3>
+            <v-textarea
+              v-model="editableContent.description.text"
+              label="Leírás szöveg"
+              auto-grow
+            />
+          </v-card>
+
+          <!-- Footer -->
+          <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-2">Lábléc</h3>
             <v-text-field label="Cím" v-model="editableContent.footer.title" />
             <v-text-field label="Szöveg" v-model="editableContent.footer.text" />
           </v-card>
 
+          <!-- Styles -->
           <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-2">Stílusok</h3>
             <v-text-field label="Label méret" v-model="editableContent.styles.labelFontSize" />
@@ -250,13 +285,14 @@ onMounted(() => {
                 flat
                 hide-inputs
                 hide-canvas
-                mode="rgb"
-                :modes="['rgb']"
+                mode="hex"
+                :modes="['hex']"
                 class="compact-color"
               />
             </div>
           </v-card>
 
+          <!-- Form fields -->
           <v-card class="pa-4 mb-6">
             <h3 class="text-subtitle-1 mb-4">Űrlap mezők</h3>
             <v-btn color="success" class="mb-4" @click="addField">Új mező hozzáadása</v-btn>
@@ -295,8 +331,44 @@ onMounted(() => {
                   <v-expand-transition>
                     <div v-show="isExpanded(field.id)">
                       <v-text-field label="Címke" v-model="field.label" class="mb-2" />
+                      <v-textarea
+                        label="Leírás / kérdés szöveg"
+                        v-model="field.description"
+                        auto-grow
+                        class="mb-2"
+                      />
+                      <v-text-field
+                        label="Technikai név (name)"
+                        v-model="field.name"
+                        :rules="[
+                          (v) => !!v || 'A mezőnév nem lehet üres.',
+                          (v) => isNameUnique(v, field.id) || 'A mezőnévnek egyedinek kell lennie.',
+                        ]"
+                        class="mb-2"
+                        hint="Ez a név fog megjelenni a beküldött JSON kulcsaként."
+                        persistent-hint
+                      />
                       <v-select
-                        :items="['text', 'number', 'select', 'switch', 'file']"
+                        :items="[
+                          'text',
+                          'number',
+                          'select',
+                          'switch',
+                          'file',
+                          'checkbox',
+                          'checkbox-group',
+                          'radio',
+                          'slider',
+                          'range',
+                          'rating',
+                          'textarea',
+                          'email',
+                          'tel',
+                          'date',
+                          'time',
+                          'divider',
+                          'headline',
+                        ]"
                         label="Típus"
                         v-model="field.type"
                         class="mb-2"
@@ -304,12 +376,27 @@ onMounted(() => {
                       <v-text-field label="Placeholder" v-model="field.placeholder" class="mb-2" />
                       <v-switch v-model="field.enabled" label="Engedélyezve" class="mb-2" />
                       <v-switch v-model="field.required" label="Kötelező" class="mb-2" />
+                      <v-select
+                        :items="columnWidthOptions"
+                        item-title="label"
+                        item-value="value"
+                        label="Mező szélessége"
+                        v-model="field.columns"
+                        class="mb-2"
+                      />
 
+                      <!-- Típus-specifikus mezők -->
                       <v-text-field
                         v-if="['text', 'number'].includes(field.type)"
                         label="Minimum"
                         v-model.number="field.validations.min"
                         type="number"
+                        class="mb-2"
+                      />
+                      <v-text-field
+                        v-if="['checkbox', 'radio'].includes(field.type)"
+                        label="Mező neve (kulcs)"
+                        v-model="field.name"
                         class="mb-2"
                       />
                       <v-text-field
@@ -335,7 +422,36 @@ onMounted(() => {
                         class="mb-2"
                       />
 
-                      <template v-if="field.type === 'select'">
+                      <v-text-field
+                        v-if="['slider', 'range', 'rating'].includes(field.type)"
+                        label="Minimum érték"
+                        v-model.number="field.validations.min"
+                        type="number"
+                        class="mb-2"
+                      />
+                      <v-text-field
+                        v-if="['slider', 'range', 'rating'].includes(field.type)"
+                        label="Maximum érték"
+                        v-model.number="field.validations.max"
+                        type="number"
+                        class="mb-2"
+                      />
+                      <v-text-field
+                        v-if="['slider', 'range'].includes(field.type)"
+                        label="Lépésköz (step)"
+                        v-model.number="field.validations.step"
+                        type="number"
+                        class="mb-2"
+                      />
+                      <v-text-field
+                        v-if="field.type === 'rating'"
+                        label="Ikon neve (pl. mdi-star)"
+                        v-model="field.icon"
+                        class="mb-2"
+                      />
+
+                      <!-- Opció alapú mezők -->
+                      <template v-if="['checkbox-group', 'radio', 'select'].includes(field.type)">
                         <v-select
                           label="Forrás típusa"
                           :items="['cms', 'api']"
@@ -369,9 +485,8 @@ onMounted(() => {
                         @click="removeField(i)"
                         size="small"
                         class="mt-2"
+                        >Törlés</v-btn
                       >
-                        Törlés
-                      </v-btn>
                     </div>
                   </v-expand-transition>
                 </v-card>
@@ -380,6 +495,7 @@ onMounted(() => {
           </v-card>
 
           <v-btn type="submit" color="primary">Mentés</v-btn>
+
           <v-alert
             v-if="errorMessage"
             type="error"
@@ -387,10 +503,8 @@ onMounted(() => {
             class="mt-4"
             border="start"
             @click="errorMessage = ''"
+            >{{ errorMessage }}</v-alert
           >
-            {{ errorMessage }}
-          </v-alert>
-
           <v-alert
             v-if="successMessage"
             type="success"
@@ -398,9 +512,8 @@ onMounted(() => {
             class="mt-4"
             border="start"
             @click="successMessage = ''"
+            >{{ successMessage }}</v-alert
           >
-            {{ successMessage }}
-          </v-alert>
         </v-form>
       </v-window-item>
 
